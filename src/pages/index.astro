@@ -1,6 +1,5 @@
 ---
-import FilmList from '../components/FilmList.astro';
-
+import FilmList from "../components/FilmList.astro";
 ---
 
 <html lang="en">
@@ -9,13 +8,16 @@ import FilmList from '../components/FilmList.astro';
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="viewport" content="width=device-width" />
+		<meta name="description" content="Explore the repertuar of cinemas in Warsaw, Poland" />
 		<meta name="generator" content={Astro.generator} />
 		<title>KinoRadar</title>
 	</head>
 	<body>
 		<h1>KinoRadar</h1>
-		<p>Today's films from Kinoteka, Kino Muranów, U-Jazdowski, Kino Wisła, Kino Atlantic, Kinoluna, Kino Kultura and Kino Amondo:</p>
+		<p>
+			Today's films from Kinoteka, Kino Muranów, U-Jazdowski, Kino Wisła,
+			Kino Atlantic, Kinoluna, Kino Kultura and Kino Amondo:
+		</p>
 		<FilmList />
 	</body>
 </html>
-
