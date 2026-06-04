@@ -14,6 +14,9 @@ export async function parseUJazdowski(date?: string | Date) {
     const title = $(el).find('div.title em').first().text().trim();
     if (!title) return;
 
+    const posterSrc = $(el).find('picture img').first().attr('src');
+    const poster = posterSrc ? `https://u-jazdowski.pl${posterSrc}` : undefined;
+
     const times: string[] = [];
     const hoursText = $(el).find('div.hours').text();
     if (hoursText) {
@@ -26,7 +29,7 @@ export async function parseUJazdowski(date?: string | Date) {
     const href = $(el).attr('href');
     const link = href ? (href.startsWith('http') ? href : `https://u-jazdowski.pl${href}`) : undefined;
 
-    shows.push({ title, times, link });
+    shows.push({ title, times, link, poster });
   });
 
   if (shows.length === 0) {
