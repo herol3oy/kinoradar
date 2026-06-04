@@ -19,6 +19,12 @@
     --text-muted: #666666;
     --neon-accent: #00ff66; /* Terminal green */
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --color-kinoteka: #00ff66;
+    --color-kinomuranow: #00ccff;
+    --color-u-jazdowski: #ff44cc;
+    --color-kinowisla: #ffcc00;
+    --color-kinoatlantic: #ff6600;
+    --color-kinoluna: #aa66ff;
   }
 
   * {
@@ -70,7 +76,7 @@
   }
 
   #film-date {
-    background: transparent;
+    background: #111;
     color: var(--text-main);
     border: 1px solid var(--border-color);
     font-family: var(--font-mono);
@@ -79,67 +85,92 @@
     cursor: pointer;
   }
 
+  #film-date option {
+    background: #111;
+    color: var(--text-main);
+  }
+
   #film-date:focus {
     border-color: var(--neon-accent);
   }
 
   /* =========================================
-     The Whole-Screen Micro Grid
+     Cinema Columns Layout
      ========================================= */
-  #film-list ul {
-    display: grid;
-    /* Tiny boxes: scales from 200px to fill infinite horizontal space */
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px;
-    list-style: none;
+  #film-list {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+  }
+
+  #film-list .columns {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  #film-list .cinema-column {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #film-list .cinema-header {
+    font-size: 0.85rem;
+    font-weight: bold;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid;
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
 
   /* =========================================
-     The Little Box (Film Card)
+     Film Card (within column)
      ========================================= */
-  #film-list li {
+  #film-list .film-card {
     background-color: var(--grid-box-bg);
     border: 1px solid var(--border-color);
-    padding: 1rem;
+    padding: 0.75rem;
     font-size: 0.8rem;
     line-height: 1.4;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    gap: 1.5rem;
-    position: relative;
+    gap: 0.75rem;
     word-break: break-word;
   }
 
-  /* Digital Hover Trigger */
-  #film-list li:hover {
-    border-color: var(--neon-accent);
+  #film-list .film-card:hover {
     box-shadow: 0 0 10px rgba(0, 255, 102, 0.15);
   }
 
+  #film-list .film-title {
+    font-weight: bold;
+    font-size: 0.85rem;
+  }
+
+  #film-list .film-times {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
   /* Retro Action Link */
-  #film-list a {
+  #film-list .film-card a {
     text-decoration: none;
     color: #000000;
     background-color: var(--text-main);
     font-weight: bold;
     text-transform: uppercase;
     text-align: center;
-    font-size: 0.75rem;
-    padding: 0.4rem 0;
+    font-size: 0.7rem;
+    padding: 0.35rem 0;
     display: block;
     width: 100%;
     margin-top: auto;
   }
 
-  #film-list a:hover {
+  #film-list .film-card a:hover {
     background-color: var(--neon-accent);
-  }
-
-  /* Custom Loading / Error Messages */
-  #film-list {
-    font-size: 0.9rem;
-    text-transform: uppercase;
   }
 </style>
 
@@ -189,26 +220,68 @@
         container.textContent = '>> NO_SHOWS_FOUND_FOR_THIS_DAY.';
         return;
       }
-      const ul = document.createElement('ul');
-      data.forEach((s) => {
-        const li = document.createElement('li');
-        const times = s.times && s.times.length ? ` \n [${s.times.join(', ')}]` : '';
-        
-        // Output formatting optimized for smaller boxes
-        li.innerText = `${s.title} ${times} \n\n@ ${s.cinema || s.source || 'UNK'}`;
-        
-        if (s.link) {
-          const a = document.createElement('a');
-          a.href = s.link;
-          a.textContent = 'LAUNCH_TICKET';
-          a.target = '_blank';
-          a.rel = 'noopener';
-          li.appendChild(a);
+
+      const cinemas = ['Kinoteka', 'Kino Muranów', 'U-Jazdowski', 'Kino Wisła', 'Kino Atlantic', 'Kinoluna'];
+      const groups = {};
+      for (const c of cinemas) groups[c] = [];
+      for (const s of data) {
+        const cinema = s.cinema || s.source || 'UNK';
+        if (!groups[cinema]) groups[cinema] = [];
+        groups[cinema].push(s);
+      }
+
+      const columns = document.createElement('div');
+      columns.className = 'columns';
+
+      for (const cinema of cinemas) {
+        const shows = groups[cinema] || [];
+        const col = document.createElement('div');
+        col.className = 'cinema-column';
+
+        const colorVarName = { 'Kinoteka': '--color-kinoteka', 'Kino Muranów': '--color-kinomuranow', 'U-Jazdowski': '--color-u-jazdowski', 'Kino Wisła': '--color-kinowisla', 'Kino Atlantic': '--color-kinoatlantic', 'Kinoluna': '--color-kinoluna' }[cinema] || '--color-kinoteka';
+        const colorVar = getComputedStyle(document.documentElement).getPropertyValue(colorVarName).trim() || '#888';
+
+        const header = document.createElement('div');
+        header.className = 'cinema-header';
+        header.style.borderBottomColor = colorVar;
+        header.style.color = colorVar;
+        header.textContent = `● ${cinema} (${shows.length})`;
+
+        col.appendChild(header);
+
+        for (const s of shows) {
+          const card = document.createElement('div');
+          card.className = 'film-card';
+          card.style.borderLeft = `3px solid ${colorVar}`;
+
+          const title = document.createElement('div');
+          title.className = 'film-title';
+          title.textContent = s.title;
+
+          const times = document.createElement('div');
+          times.className = 'film-times';
+          times.textContent = s.times && s.times.length ? `[${s.times.join(', ')}]` : '';
+
+          card.appendChild(title);
+          card.appendChild(times);
+
+          if (s.link) {
+            const a = document.createElement('a');
+            a.href = s.link;
+            a.textContent = 'LAUNCH_TICKET';
+            a.target = '_blank';
+            a.rel = 'noopener';
+            card.appendChild(a);
+          }
+
+          col.appendChild(card);
         }
-        ul.appendChild(li);
-      });
+
+        columns.appendChild(col);
+      }
+
       container.innerHTML = '';
-      container.appendChild(ul);
+      container.appendChild(columns);
     } catch (err) {
       container.textContent = '>> ERROR_FAILED_TO_LOAD.';
       console.error(err);

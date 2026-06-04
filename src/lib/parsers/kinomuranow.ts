@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
-export async function parseKinomuranow(url = 'https://kinomuranow.pl/repertuar') {
+export async function parseKinomuranow(date?: string | Date, url = 'https://kinomuranow.pl/repertuar') {
   const res = await axios.get(url);
   const $ = cheerio.load(res.data);
   const shows: Array<any> = [];
@@ -39,6 +39,14 @@ export async function parseKinomuranow(url = 'https://kinomuranow.pl/repertuar')
       const title = $(el).text().trim();
       if (title) shows.push({ title, times: [] });
     });
+  }
+
+  if (date) {
+    const dayStr = typeof date === 'string' ? date : date.toISOString().slice(0, 10);
+    const [y, m, d] = dayStr.split('-').map(Number);
+    const polishMonths = ['', 'sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
+    const monthAbbr = polishMonths[m];
+    return shows.filter(s => s.day && s.day.includes(String(d)) && s.day.includes(monthAbbr));
   }
 
   return shows;
