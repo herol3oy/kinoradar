@@ -86,8 +86,11 @@ export async function parseKinogram(date?: string | Date) {
     const time = new Date(s.screeningTimeFrom).toLocaleTimeString('pl-PL', { timeZone: 'Europe/Warsaw', hour: '2-digit', minute: '2-digit' });
     const poster = s.movie?.posters?.[0] || undefined;
 
+    const movieId = s.movie?.id;
+    const link = movieId ? `https://bilety.kinogram.pl/screening/movie/${movieId}` : undefined;
+
     if (!groups[title]) {
-      groups[title] = { title, times: [], poster };
+      groups[title] = { title, times: [], poster, link };
     }
     if (time) groups[title].times.push(time);
   }
