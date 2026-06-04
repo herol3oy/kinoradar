@@ -9,6 +9,7 @@ import { parseKinoamondo, siteName as amondoName } from '../lib/parsers/kinoamon
 import { parseKinoelektronik, siteName as elektronikName } from '../lib/parsers/kinoelektronik';
 import { parseKinocytadela, siteName as cytadelaName } from '../lib/parsers/kinocytadela';
 import { parseIluzjon, siteName as iluzjonName } from '../lib/parsers/iluzjon';
+import { parseKinogram, siteName as kinogramName } from '../lib/parsers/kinogram';
 import { normalizeMany } from '../lib/normalize';
 
 type Cached = { ts: number; data: any[] } | null;
@@ -28,6 +29,7 @@ const CINEMA_PARSERS = [
   { parse: parseKinoelektronik, name: elektronikName, slug: 'kinoelektronik', label: 'Kino Elektronik' },
   { parse: parseKinocytadela, name: cytadelaName, slug: 'kinocytadela', label: 'Kino Cytadela' },
   { parse: parseIluzjon, name: iluzjonName, slug: 'iluzjon', label: 'Iluzjon' },
+  { parse: parseKinogram, name: kinogramName, slug: 'kinogram', label: 'Kinogram' },
 ];
 
 function normalizeDate(date?: string): string {

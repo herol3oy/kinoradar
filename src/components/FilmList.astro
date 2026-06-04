@@ -1,7 +1,7 @@
 ---
 import "./../global.css";
 
-      const cinemas = ['Kinoteka', 'Muranów', 'U-Jazdowski', 'Wisła', 'Atlantic', 'Kinoluna', 'Kultura', 'Amondo', 'Elektronik', 'Cytadela', 'Iluzjon'];
+      const cinemas = ['Kinoteka', 'Muranów', 'U-Jazdowski', 'Wisła', 'Atlantic', 'Kinoluna', 'Kultura', 'Amondo', 'Elektronik', 'Cytadela', 'Iluzjon', 'Kinogram'];
 
 const colorValues: Record<string, string> = {
   'Kinoteka': '#00ff66',
@@ -15,6 +15,7 @@ const colorValues: Record<string, string> = {
   'Elektronik': '#ff8844',
   'Cytadela': '#ff4488',
   'Iluzjon': '#00ffaa',
+  'Kinogram': '#ff55aa',
 };
 
 interface Show {
@@ -122,7 +123,7 @@ if (initialData && Array.isArray(initialData)) {
         return;
       }
 
-const cinemas = ['Kinoteka', 'Muranów', 'U-Jazdowski', 'Wisła', 'Atlantic', 'Kinoluna', 'Kultura', 'Amondo', 'Elektronik', 'Cytadela', 'Iluzjon'];
+const cinemas = ['Kinoteka', 'Muranów', 'U-Jazdowski', 'Wisła', 'Atlantic', 'Kinoluna', 'Kultura', 'Amondo', 'Elektronik', 'Cytadela', 'Iluzjon', 'Kinogram'];
       const groups = {};
       for (const c of cinemas) groups[c] = [];
       for (const s of data) {
@@ -134,7 +135,7 @@ const cinemas = ['Kinoteka', 'Muranów', 'U-Jazdowski', 'Wisła', 'Atlantic', 'K
       const columns = document.createElement('div');
       columns.className = 'columns';
 
-      const colorValues = { 'Kinoteka': '#00ff66', 'Muranów': '#00ccff', 'U-Jazdowski': '#ff44cc', 'Wisła': '#ffcc00', 'Atlantic': '#ff6600', 'Kinoluna': '#aa66ff', 'Kultura': '#ff3366', 'Amondo': '#33ffcc', 'Elektronik': '#ff8844', 'Cytadela': '#ff4488', 'Iluzjon': '#00ffaa' };
+      const colorValues = { 'Kinoteka': '#00ff66', 'Muranów': '#00ccff', 'U-Jazdowski': '#ff44cc', 'Wisła': '#ffcc00', 'Atlantic': '#ff6600', 'Kinoluna': '#aa66ff', 'Kultura': '#ff3366', 'Amondo': '#33ffcc', 'Elektronik': '#ff8844', 'Cytadela': '#ff4488', 'Iluzjon': '#00ffaa', 'Kinogram': '#ff55aa' };
 
       for (const cinema of cinemas) {
         const shows = groups[cinema] || [];
