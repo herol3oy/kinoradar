@@ -16,6 +16,9 @@ export async function parseKinomuranow(date?: string | Date, url = 'https://kino
       const title = $(movie).find('.movie-calendar-info__title').first().text().trim();
       if (!title) return;
 
+      const posterSrc = $(movie).find('.movie-calendar-info__media img, .movie-calendar-info-expand__thumb img').first().attr('src');
+      const poster = posterSrc || undefined;
+
       const times: string[] = [];
       $(movie).find('.movie-calendar-info__date').each((_, timeEl) => {
         const txt = $(timeEl).text().trim();
@@ -28,7 +31,7 @@ export async function parseKinomuranow(date?: string | Date, url = 'https://kino
         $(movie).find('a.c-button-tickets--res-link').attr('href') ||
         $(movie).find('a.c-button-tickets--buy-link').attr('href');
 
-      const show: any = { title, times, link };
+      const show: any = { title, times, link, poster };
       if (dayName) show.day = dayName;
       shows.push(show);
     });

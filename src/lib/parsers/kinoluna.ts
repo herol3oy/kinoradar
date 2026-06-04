@@ -15,13 +15,16 @@ export async function parseKinoluna(date?: string | Date) {
     const href = $(item).find('.list-item-title a').first().attr('href');
     const link = href || undefined;
 
+    const posterSrc = $(item).find('.list-item-image img.b24-image').first().attr('src');
+    const poster = posterSrc || undefined;
+
     const times: string[] = [];
     $(item).find('.b24-button--active .b24-button__hour').each((_, el) => {
       const hour = $(el).text().trim();
       if (hour) times.push(hour);
     });
 
-    shows.push({ title, times, link });
+    shows.push({ title, times, link, poster });
   });
 
   return shows;

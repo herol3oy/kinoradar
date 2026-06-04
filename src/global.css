@@ -14,6 +14,7 @@
     --color-kinowisla: #ffcc00;
     --color-kinoatlantic: #ff6600;
     --color-kinoluna: #aa66ff;
+    --color-kinokultura: #ff3366;
 }
 
 * {
@@ -127,6 +128,13 @@ body>p {
 
 #film-list .film-card:hover {
     box-shadow: 0 0 10px rgba(0, 255, 102, 0.15);
+}
+
+#film-list .film-poster {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
 }
 
 #film-list .film-title {

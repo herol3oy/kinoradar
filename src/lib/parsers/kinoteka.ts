@@ -20,6 +20,9 @@ export async function parseKinoteka(date?: string | Date) {
       article.find('a.e-movie__thumbnail-link').attr('href') ||
       article.find('a.e-movie__footer-buy').attr('href');
 
+    const posterSrc = article.find('img.e-movie__thumbnail-img').first().attr('src');
+    const poster = posterSrc || undefined;
+
     const times: string[] = [];
     article.find('ul.e-movie__footer-screenings li a').each((_, show) => {
       const time =
@@ -29,7 +32,7 @@ export async function parseKinoteka(date?: string | Date) {
       if (time) times.push(time.trim());
     });
 
-    shows.push({ title, link, times });
+    shows.push({ title, link, times, poster });
   });
 
   return shows;

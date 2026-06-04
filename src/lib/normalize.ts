@@ -11,6 +11,7 @@ export type Show = {
   cinema: string;
   link?: string;
   source?: string;
+  poster?: string;
 };
 
 export function normalizeShow(raw: RawShow, cinema: string, source?: string): Show {
@@ -21,7 +22,8 @@ export function normalizeShow(raw: RawShow, cinema: string, source?: string): Sh
     ? [String(raw.times).trim()]
     : [];
   const link = raw.link || raw.url || undefined;
-  return { title, times, cinema, link, source };
+  const poster = raw.poster || undefined;
+  return { title, times, cinema, link, source, poster };
 }
 
 export function normalizeMany(raws: RawShow[], cinema: string, source?: string) {

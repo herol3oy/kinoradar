@@ -15,13 +15,16 @@ export async function parseKinowisla(date?: string | Date) {
     const href = $(row).find('.repertoire-movie-title a').first().attr('href');
     const link = href ? `https://www.novekino.pl/kina/wisla/${href}` : undefined;
 
+    const posterSrc = $(row).find('.repertoire-movie-poster img').first().attr('src');
+    const poster = posterSrc ? `https://www.novekino.pl${posterSrc}` : undefined;
+
     const times: string[] = [];
     $(row).find('.repertoire-movie-time').each((_, el) => {
       const hour = $(el).data('hour') || $(el).text().trim();
       if (hour) times.push(hour);
     });
 
-    shows.push({ title, times, link });
+    shows.push({ title, times, link, poster });
   });
 
   return shows;

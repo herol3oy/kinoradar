@@ -55,7 +55,7 @@ import "./../global.css";
         return;
       }
 
-      const cinemas = ['Kinoteka', 'Kino Muranów', 'U-Jazdowski', 'Kino Wisła', 'Kino Atlantic', 'Kinoluna'];
+      const cinemas = ['Kinoteka', 'Kino Muranów', 'U-Jazdowski', 'Kino Wisła', 'Kino Atlantic', 'Kinoluna', 'Kino Kultura'];
       const groups = {};
       for (const c of cinemas) groups[c] = [];
       for (const s of data) {
@@ -72,7 +72,7 @@ import "./../global.css";
         const col = document.createElement('div');
         col.className = 'cinema-column';
 
-        const colorVarName = { 'Kinoteka': '--color-kinoteka', 'Kino Muranów': '--color-kinomuranow', 'U-Jazdowski': '--color-u-jazdowski', 'Kino Wisła': '--color-kinowisla', 'Kino Atlantic': '--color-kinoatlantic', 'Kinoluna': '--color-kinoluna' }[cinema] || '--color-kinoteka';
+        const colorVarName = { 'Kinoteka': '--color-kinoteka', 'Kino Muranów': '--color-kinomuranow', 'U-Jazdowski': '--color-u-jazdowski', 'Kino Wisła': '--color-kinowisla', 'Kino Atlantic': '--color-kinoatlantic', 'Kinoluna': '--color-kinoluna', 'Kino Kultura': '--color-kinokultura' }[cinema] || '--color-kinoteka';
         const colorVar = getComputedStyle(document.documentElement).getPropertyValue(colorVarName).trim() || '#888';
 
         const header = document.createElement('div');
@@ -87,6 +87,14 @@ import "./../global.css";
           const card = document.createElement('div');
           card.className = 'film-card';
           card.style.borderLeft = `3px solid ${colorVar}`;
+
+          if (s.poster) {
+            const img = document.createElement('img');
+            img.src = s.poster;
+            img.alt = s.title;
+            img.className = 'film-poster';
+            card.appendChild(img);
+          }
 
           const title = document.createElement('div');
           title.className = 'film-title';
