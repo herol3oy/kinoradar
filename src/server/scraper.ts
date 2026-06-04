@@ -11,9 +11,24 @@ import { parseKinocytadela, siteName as cytadelaName } from '../lib/parsers/kino
 import { parseIluzjon, siteName as iluzjonName } from '../lib/parsers/iluzjon';
 import { normalizeMany } from '../lib/normalize';
 
-type Cached = { ts: number; data: any } | null;
+type Cached = { ts: number; data: any[] } | null;
 const cache: Record<string, Cached> = {};
 const TTL = 1000 * 60 * 5; // 5 minutes
+
+// 1. Centralized configuration mapping for easy scaling
+const CINEMA_PARSERS = [
+  { parse: parseKinoteka, name: kinotekaName, slug: 'kinoteka', label: 'Kinoteka' },
+  { parse: parseKinomuranow, name: muranowName, slug: 'kinomuranow', label: 'Kino Muranów' },
+  { parse: parseUJazdowski, name: ujName, slug: 'u-jazdowski', label: 'U-Jazdowski' },
+  { parse: parseKinowisla, name: wislaName, slug: 'kinowisla', label: 'Kino Wisła' },
+  { parse: parseKinoatlantic, name: atlanticName, slug: 'kinoatlantic', label: 'Kino Atlantic' },
+  { parse: parseKinoluna, name: kinolunaName, slug: 'kinoluna', label: 'Kinoluna' },
+  { parse: parseKinokultura, name: kinokulturaName, slug: 'kinokultura', label: 'Kino Kultura' },
+  { parse: parseKinoamondo, name: amondoName, slug: 'kinoamondo', label: 'Kino Amondo' },
+  { parse: parseKinoelektronik, name: elektronikName, slug: 'kinoelektronik', label: 'Kino Elektronik' },
+  { parse: parseKinocytadela, name: cytadelaName, slug: 'kinocytadela', label: 'Kino Cytadela' },
+  { parse: parseIluzjon, name: iluzjonName, slug: 'iluzjon', label: 'Iluzjon' },
+];
 
 function normalizeDate(date?: string): string {
   if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -26,82 +41,31 @@ export async function getTodayShows(date?: string, force = false) {
   const day = normalizeDate(date);
   const now = Date.now();
   const cached = cache[day];
+  
   if (!force && cached && now - cached.ts < TTL) {
     return cached.data;
   }
 
-  const results = await Promise.allSettled([
-    parseKinoteka(day),
-    parseKinomuranow(day),
-    parseUJazdowski(day),
-    parseKinowisla(day),
-    parseKinoatlantic(day),
-    parseKinoluna(day),
-    parseKinokultura(day),
-    parseKinoamondo(day),
-    parseKinoelektronik(day),
-    parseKinocytadela(day),
-    parseIluzjon(day),
-  ]);
+  // 2. Map dynamically over the parsers
+  const results = await Promise.allSettled(
+    CINEMA_PARSERS.map((cinema) => cinema.parse(day))
+  );
+  
   const all: any[] = [];
 
-  if (results[0].status === 'fulfilled') {
-    all.push(...normalizeMany(results[0].value, kinotekaName, 'kinoteka'));
-  } else if (results[0].status === 'rejected') {
-    console.error('Kinoteka parser error:', results[0].reason);
-  }
-  if (results[1].status === 'fulfilled') {
-    all.push(...normalizeMany(results[1].value, muranowName, 'kinomuranow'));
-  } else if (results[1].status === 'rejected') {
-    console.error('Kino Muranów parser error:', results[1].reason);
-  }
-  if (results[2].status === 'fulfilled') {
-    all.push(...normalizeMany(results[2].value, ujName, 'u-jazdowski'));
-  } else if (results[2].status === 'rejected') {
-    console.error('U-Jazdowski parser error:', results[2].reason);
-  }
-  if (results[3].status === 'fulfilled') {
-    all.push(...normalizeMany(results[3].value, wislaName, 'kinowisla'));
-  } else if (results[3].status === 'rejected') {
-    console.error('Kino Wisła parser error:', results[3].reason);
-  }
-  if (results[4].status === 'fulfilled') {
-    all.push(...normalizeMany(results[4].value, atlanticName, 'kinoatlantic'));
-  } else if (results[4].status === 'rejected') {
-    console.error('Kino Atlantic parser error:', results[4].reason);
-  }
-  if (results[5].status === 'fulfilled') {
-    all.push(...normalizeMany(results[5].value, kinolunaName, 'kinoluna'));
-  } else if (results[5].status === 'rejected') {
-    console.error('Kinoluna parser error:', results[5].reason);
-  }
-  if (results[6].status === 'fulfilled') {
-    all.push(...normalizeMany(results[6].value, kinokulturaName, 'kinokultura'));
-  } else if (results[6].status === 'rejected') {
-    console.error('Kino Kultura parser error:', results[6].reason);
-  }
-  if (results[7].status === 'fulfilled') {
-    all.push(...normalizeMany(results[7].value, amondoName, 'kinoamondo'));
-  } else if (results[7].status === 'rejected') {
-    console.error('Kino Amondo parser error:', results[7].reason);
-  }
-  if (results[8].status === 'fulfilled') {
-    all.push(...normalizeMany(results[8].value, elektronikName, 'kinoelektronik'));
-  } else if (results[8].status === 'rejected') {
-    console.error('Kino Elektronik parser error:', results[8].reason);
-  }
-  if (results[9].status === 'fulfilled') {
-    all.push(...normalizeMany(results[9].value, cytadelaName, 'kinocytadela'));
-  } else if (results[9].status === 'rejected') {
-    console.error('Kino Cytadela parser error:', results[9].reason);
-  }
-  if (results[10].status === 'fulfilled') {
-    all.push(...normalizeMany(results[10].value, iluzjonName, 'iluzjon'));
-  } else if (results[10].status === 'rejected') {
-    console.error('Iluzjon parser error:', results[10].reason);
-  }
+  // 3. Process results safely using the index alignment guarantee
+  results.forEach((result, index) => {
+    const cinema = CINEMA_PARSERS[index];
+    
+    if (result.status === 'fulfilled') {
+      all.push(...normalizeMany(result.value, cinema.name, cinema.slug));
+    } else {
+      console.error(`${cinema.label} parser error:`, result.reason);
+    }
+  });
 
-  const seen = new Set();
+  // 4. Deduplication
+  const seen = new Set<string>();
   const deduped = all.filter((s) => {
     const key = `${s.title.toLowerCase()}|${s.cinema || s.source || ''}`;
     if (seen.has(key)) return false;
