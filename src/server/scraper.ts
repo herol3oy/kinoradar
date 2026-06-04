@@ -6,6 +6,8 @@ import { parseKinoatlantic, siteName as atlanticName } from '../lib/parsers/kino
 import { parseKinoluna, siteName as kinolunaName } from '../lib/parsers/kinoluna';
 import { parseKinokultura, siteName as kinokulturaName } from '../lib/parsers/kinokultura';
 import { parseKinoamondo, siteName as amondoName } from '../lib/parsers/kinoamondo';
+import { parseKinoelektronik, siteName as elektronikName } from '../lib/parsers/kinoelektronik';
+import { parseKinocytadela, siteName as cytadelaName } from '../lib/parsers/kinocytadela';
 import { normalizeMany } from '../lib/normalize';
 
 type Cached = { ts: number; data: any } | null;
@@ -36,6 +38,8 @@ export async function getTodayShows(date?: string, force = false) {
     parseKinoluna(day),
     parseKinokultura(day),
     parseKinoamondo(day),
+    parseKinoelektronik(day),
+    parseKinocytadela(day),
   ]);
   const all: any[] = [];
 
@@ -78,6 +82,16 @@ export async function getTodayShows(date?: string, force = false) {
     all.push(...normalizeMany(results[7].value, amondoName, 'kinoamondo'));
   } else if (results[7].status === 'rejected') {
     console.error('Kino Amondo parser error:', results[7].reason);
+  }
+  if (results[8].status === 'fulfilled') {
+    all.push(...normalizeMany(results[8].value, elektronikName, 'kinoelektronik'));
+  } else if (results[8].status === 'rejected') {
+    console.error('Kino Elektronik parser error:', results[8].reason);
+  }
+  if (results[9].status === 'fulfilled') {
+    all.push(...normalizeMany(results[9].value, cytadelaName, 'kinocytadela'));
+  } else if (results[9].status === 'rejected') {
+    console.error('Kino Cytadela parser error:', results[9].reason);
   }
 
   const seen = new Set();

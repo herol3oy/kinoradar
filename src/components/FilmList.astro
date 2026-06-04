@@ -1,7 +1,7 @@
 ---
 import "./../global.css";
 
-const cinemas = ['Kinoteka', 'Kino Muranów', 'U-Jazdowski', 'Kino Wisła', 'Kino Atlantic', 'Kinoluna', 'Kino Kultura', 'Kino Amondo'];
+      const cinemas = ['Kinoteka', 'Kino Muranów', 'U-Jazdowski', 'Kino Wisła', 'Kino Atlantic', 'Kinoluna', 'Kino Kultura', 'Kino Amondo', 'Kino Elektronik', 'Kino Cytadela'];
 
 const colorValues: Record<string, string> = {
   'Kinoteka': '#00ff66',
@@ -12,6 +12,8 @@ const colorValues: Record<string, string> = {
   'Kinoluna': '#aa66ff',
   'Kino Kultura': '#ff3366',
   'Kino Amondo': '#33ffcc',
+  'Kino Elektronik': '#ff8844',
+  'Kino Cytadela': '#ff4488',
 };
 
 interface Show {
@@ -119,7 +121,7 @@ if (initialData && Array.isArray(initialData)) {
         return;
       }
 
-      const cinemas = ['Kinoteka', 'Kino Muranów', 'U-Jazdowski', 'Kino Wisła', 'Kino Atlantic', 'Kinoluna', 'Kino Kultura', 'Kino Amondo'];
+const cinemas = ['Kinoteka', 'Kino Muranów', 'U-Jazdowski', 'Kino Wisła', 'Kino Atlantic', 'Kinoluna', 'Kino Kultura', 'Kino Amondo', 'Kino Elektronik', 'Kino Cytadela'];
       const groups = {};
       for (const c of cinemas) groups[c] = [];
       for (const s of data) {
@@ -131,7 +133,7 @@ if (initialData && Array.isArray(initialData)) {
       const columns = document.createElement('div');
       columns.className = 'columns';
 
-      const colorValues = { 'Kinoteka': '#00ff66', 'Kino Muranów': '#00ccff', 'U-Jazdowski': '#ff44cc', 'Kino Wisła': '#ffcc00', 'Kino Atlantic': '#ff6600', 'Kinoluna': '#aa66ff', 'Kino Kultura': '#ff3366', 'Kino Amondo': '#33ffcc' };
+      const colorValues = { 'Kinoteka': '#00ff66', 'Kino Muranów': '#00ccff', 'U-Jazdowski': '#ff44cc', 'Kino Wisła': '#ffcc00', 'Kino Atlantic': '#ff6600', 'Kinoluna': '#aa66ff', 'Kino Kultura': '#ff3366', 'Kino Amondo': '#33ffcc', 'Kino Elektronik': '#ff8844', 'Kino Cytadela': '#ff4488' };
 
       for (const cinema of cinemas) {
         const shows = groups[cinema] || [];

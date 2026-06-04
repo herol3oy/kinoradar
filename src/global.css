@@ -16,6 +16,8 @@
     --color-kinoluna: #aa66ff;
     --color-kinokultura: #ff3366;
     --color-kinoamondo: #33ffcc;
+    --color-kinoelektronik: #ff8844;
+    --color-kinocytadela: #ff4488;
 }
 
 * {
@@ -93,7 +95,7 @@ body>p {
 
 #film-list .columns {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(12, 1fr);
     gap: 16px;
     align-items: start;
 }
@@ -177,12 +179,6 @@ body>p {
    Responsive Breakpoints
    ========================================= */
 
-@media (max-width: 1024px) {
-    #film-list .columns {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    }
-}
-
 @media (max-width: 768px) {
     body {
         padding: 3vw;
@@ -197,7 +193,7 @@ body>p {
     }
 
     #film-list .columns {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
         gap: 10px;
     }
 }
