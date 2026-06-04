@@ -1,5 +1,8 @@
 ---
 import FilmList from "../components/FilmList.astro";
+import { getTodayShows } from "../server/scraper";
+
+const data = await getTodayShows();
 ---
 
 <html lang="en">
@@ -19,7 +22,7 @@ import FilmList from "../components/FilmList.astro";
 				Today's films from Kinoteka, Kino Muranów, U-Jazdowski, Kino Wisła,
 				Kino Atlantic, Kinoluna, Kino Kultura and Kino Amondo:
 			</p>
-			<FilmList />
+			<FilmList initialData={data} />
 		</main>
 	</body>
 </html>

@@ -1,12 +1,77 @@
 ---
 import "./../global.css";
+
+const cinemas = ['Kinoteka', 'Kino Muranów', 'U-Jazdowski', 'Kino Wisła', 'Kino Atlantic', 'Kinoluna', 'Kino Kultura', 'Kino Amondo'];
+
+const colorValues: Record<string, string> = {
+  'Kinoteka': '#00ff66',
+  'Kino Muranów': '#00ccff',
+  'U-Jazdowski': '#ff44cc',
+  'Kino Wisła': '#ffcc00',
+  'Kino Atlantic': '#ff6600',
+  'Kinoluna': '#aa66ff',
+  'Kino Kultura': '#ff3366',
+  'Kino Amondo': '#33ffcc',
+};
+
+interface Show {
+  title: string;
+  times?: string[];
+  cinema?: string;
+  link?: string;
+  poster?: string;
+  source?: string;
+}
+
+const { initialData } = Astro.props as { initialData?: Show[] | null };
+
+const groups: Record<string, Show[]> = {};
+for (const c of cinemas) groups[c] = [];
+if (initialData && Array.isArray(initialData)) {
+  for (const s of initialData) {
+    const cinema = s.cinema || s.source || 'UNK';
+    if (!groups[cinema]) groups[cinema] = [];
+    groups[cinema].push(s);
+  }
+}
 ---
+
 <div class="controls-wrapper">
   <label for="film-date">[_SELECT_DATE]:</label>
   <select id="film-date"></select>
 </div>
 
-<div id="film-list">READY...</div>
+<div id="film-list">
+{
+  initialData && initialData.length > 0 ? (
+    <div class="columns">
+      {cinemas.map(cinema => {
+        const shows = groups[cinema] || [];
+        const color = colorValues[cinema] || '#888';
+        return (
+          <div class="cinema-column">
+            <div class="cinema-header" style={{ borderBottomColor: color, color }}>
+              ● {cinema} ({shows.length})
+            </div>
+            <div class="film-scroll">
+              {shows.map(s => (
+                <div class="film-card" style={{ borderLeft: `3px solid ${color}` }}>
+                  {s.poster && <img class="film-poster" src={s.poster} alt={s.title} loading="lazy" />}
+                  <div class="film-title">{s.title}</div>
+                  <div class="film-times">{s.times?.length ? `[${s.times.join(', ')}]` : ''}</div>
+                  {s.link && <a href={s.link} target="_blank" rel="noopener">LAUNCH_TICKET</a>}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  ) : (
+    'READY...'
+  )
+}
+</div>
 
 <script type="module">
   const container = document.getElementById('film-list');
@@ -16,7 +81,6 @@ import "./../global.css";
     return date.toISOString().slice(0, 10);
   }
 
-  // Simplified format for tighter spaces
   function formatDateLabel(date) {
     return date.toLocaleDateString('pl-PL', {
       weekday: 'short',
@@ -67,18 +131,18 @@ import "./../global.css";
       const columns = document.createElement('div');
       columns.className = 'columns';
 
+      const colorValues = { 'Kinoteka': '#00ff66', 'Kino Muranów': '#00ccff', 'U-Jazdowski': '#ff44cc', 'Kino Wisła': '#ffcc00', 'Kino Atlantic': '#ff6600', 'Kinoluna': '#aa66ff', 'Kino Kultura': '#ff3366', 'Kino Amondo': '#33ffcc' };
+
       for (const cinema of cinemas) {
         const shows = groups[cinema] || [];
         const col = document.createElement('div');
         col.className = 'cinema-column';
-
-        const colorVarName = { 'Kinoteka': '--color-kinoteka', 'Kino Muranów': '--color-kinomuranow', 'U-Jazdowski': '--color-u-jazdowski', 'Kino Wisła': '--color-kinowisla', 'Kino Atlantic': '--color-kinoatlantic', 'Kinoluna': '--color-kinoluna', 'Kino Kultura': '--color-kinokultura', 'Kino Amondo': '--color-kinoamondo' }[cinema] || '--color-kinoteka';
-        const colorVar = getComputedStyle(document.documentElement).getPropertyValue(colorVarName).trim() || '#888';
+        const color = colorValues[cinema] || '#888';
 
         const header = document.createElement('div');
         header.className = 'cinema-header';
-        header.style.borderBottomColor = colorVar;
-        header.style.color = colorVar;
+        header.style.borderBottomColor = color;
+        header.style.color = color;
         header.textContent = `● ${cinema} (${shows.length})`;
 
         col.appendChild(header);
@@ -89,13 +153,14 @@ import "./../global.css";
         for (const s of shows) {
           const card = document.createElement('div');
           card.className = 'film-card';
-          card.style.borderLeft = `3px solid ${colorVar}`;
+          card.style.borderLeft = `3px solid ${color}`;
 
           if (s.poster) {
             const img = document.createElement('img');
             img.src = s.poster;
             img.alt = s.title;
             img.className = 'film-poster';
+            img.loading = 'lazy';
             card.appendChild(img);
           }
 
@@ -123,7 +188,6 @@ import "./../global.css";
         }
 
         col.appendChild(filmScroll);
-
         columns.appendChild(col);
       }
 
@@ -140,6 +204,9 @@ import "./../global.css";
     dateSelect.addEventListener('change', () => {
       load(dateSelect.value);
     });
-    load(dateSelect.value);
+    const hasInitialData = container && container.querySelector('.columns');
+    if (!hasInitialData) {
+      load(dateSelect.value);
+    }
   }
 </script>
