@@ -30,4 +30,4 @@ export async function parseKinoatlantic(date?: string | Date) {
   return shows;
 }
 
-export const siteName = 'Kino Atlantic';
+export const siteName = 'Atlantic';

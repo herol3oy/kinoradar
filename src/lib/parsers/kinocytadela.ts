@@ -32,4 +32,4 @@ export async function parseKinocytadela(date?: string | Date) {
   return Object.values(groups);
 }
 
-export const siteName = 'Kino Cytadela';
+export const siteName = 'Cytadela';

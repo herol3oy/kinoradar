@@ -30,4 +30,4 @@ export async function parseKinowisla(date?: string | Date) {
   return shows;
 }
 
-export const siteName = 'Kino Wisła';
+export const siteName = 'Wisła';

@@ -1,19 +1,20 @@
 ---
 import "./../global.css";
 
-      const cinemas = ['Kinoteka', 'Kino Muranów', 'U-Jazdowski', 'Kino Wisła', 'Kino Atlantic', 'Kinoluna', 'Kino Kultura', 'Kino Amondo', 'Kino Elektronik', 'Kino Cytadela'];
+      const cinemas = ['Kinoteka', 'Muranów', 'U-Jazdowski', 'Wisła', 'Atlantic', 'Kinoluna', 'Kultura', 'Amondo', 'Elektronik', 'Cytadela', 'Iluzjon'];
 
 const colorValues: Record<string, string> = {
   'Kinoteka': '#00ff66',
-  'Kino Muranów': '#00ccff',
+  'Muranów': '#00ccff',
   'U-Jazdowski': '#ff44cc',
-  'Kino Wisła': '#ffcc00',
-  'Kino Atlantic': '#ff6600',
+  'Wisła': '#ffcc00',
+  'Atlantic': '#ff6600',
   'Kinoluna': '#aa66ff',
-  'Kino Kultura': '#ff3366',
-  'Kino Amondo': '#33ffcc',
-  'Kino Elektronik': '#ff8844',
-  'Kino Cytadela': '#ff4488',
+  'Kultura': '#ff3366',
+  'Amondo': '#33ffcc',
+  'Elektronik': '#ff8844',
+  'Cytadela': '#ff4488',
+  'Iluzjon': '#00ffaa',
 };
 
 interface Show {
@@ -121,7 +122,7 @@ if (initialData && Array.isArray(initialData)) {
         return;
       }
 
-const cinemas = ['Kinoteka', 'Kino Muranów', 'U-Jazdowski', 'Kino Wisła', 'Kino Atlantic', 'Kinoluna', 'Kino Kultura', 'Kino Amondo', 'Kino Elektronik', 'Kino Cytadela'];
+const cinemas = ['Kinoteka', 'Muranów', 'U-Jazdowski', 'Wisła', 'Atlantic', 'Kinoluna', 'Kultura', 'Amondo', 'Elektronik', 'Cytadela', 'Iluzjon'];
       const groups = {};
       for (const c of cinemas) groups[c] = [];
       for (const s of data) {
@@ -133,7 +134,7 @@ const cinemas = ['Kinoteka', 'Kino Muranów', 'U-Jazdowski', 'Kino Wisła', 'Kin
       const columns = document.createElement('div');
       columns.className = 'columns';
 
-      const colorValues = { 'Kinoteka': '#00ff66', 'Kino Muranów': '#00ccff', 'U-Jazdowski': '#ff44cc', 'Kino Wisła': '#ffcc00', 'Kino Atlantic': '#ff6600', 'Kinoluna': '#aa66ff', 'Kino Kultura': '#ff3366', 'Kino Amondo': '#33ffcc', 'Kino Elektronik': '#ff8844', 'Kino Cytadela': '#ff4488' };
+      const colorValues = { 'Kinoteka': '#00ff66', 'Muranów': '#00ccff', 'U-Jazdowski': '#ff44cc', 'Wisła': '#ffcc00', 'Atlantic': '#ff6600', 'Kinoluna': '#aa66ff', 'Kultura': '#ff3366', 'Amondo': '#33ffcc', 'Elektronik': '#ff8844', 'Cytadela': '#ff4488', 'Iluzjon': '#00ffaa' };
 
       for (const cinema of cinemas) {
         const shows = groups[cinema] || [];

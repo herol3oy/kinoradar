@@ -37,4 +37,4 @@ export async function parseKinoamondo(date?: string | Date) {
   return shows;
 }
 
-export const siteName = 'Kino Amondo';
+export const siteName = 'Amondo';

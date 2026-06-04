@@ -32,4 +32,4 @@ export async function parseKinokultura(date?: string | Date) {
   return shows;
 }
 
-export const siteName = 'Kino Kultura';
+export const siteName = 'Kultura';

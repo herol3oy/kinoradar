@@ -8,6 +8,7 @@ import { parseKinokultura, siteName as kinokulturaName } from '../lib/parsers/ki
 import { parseKinoamondo, siteName as amondoName } from '../lib/parsers/kinoamondo';
 import { parseKinoelektronik, siteName as elektronikName } from '../lib/parsers/kinoelektronik';
 import { parseKinocytadela, siteName as cytadelaName } from '../lib/parsers/kinocytadela';
+import { parseIluzjon, siteName as iluzjonName } from '../lib/parsers/iluzjon';
 import { normalizeMany } from '../lib/normalize';
 
 type Cached = { ts: number; data: any } | null;
@@ -40,6 +41,7 @@ export async function getTodayShows(date?: string, force = false) {
     parseKinoamondo(day),
     parseKinoelektronik(day),
     parseKinocytadela(day),
+    parseIluzjon(day),
   ]);
   const all: any[] = [];
 
@@ -92,6 +94,11 @@ export async function getTodayShows(date?: string, force = false) {
     all.push(...normalizeMany(results[9].value, cytadelaName, 'kinocytadela'));
   } else if (results[9].status === 'rejected') {
     console.error('Kino Cytadela parser error:', results[9].reason);
+  }
+  if (results[10].status === 'fulfilled') {
+    all.push(...normalizeMany(results[10].value, iluzjonName, 'iluzjon'));
+  } else if (results[10].status === 'rejected') {
+    console.error('Iluzjon parser error:', results[10].reason);
   }
 
   const seen = new Set();

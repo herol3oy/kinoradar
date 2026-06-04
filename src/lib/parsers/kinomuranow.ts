@@ -55,4 +55,4 @@ export async function parseKinomuranow(date?: string | Date, url = 'https://kino
   return shows;
 }
 
-export const siteName = 'Kino Muranów';
+export const siteName = 'Muranów';

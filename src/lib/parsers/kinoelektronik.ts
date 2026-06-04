@@ -30,4 +30,4 @@ export async function parseKinoelektronik(date?: string | Date) {
   return shows;
 }
 
-export const siteName = 'Kino Elektronik';
+export const siteName = 'Elektronik';
