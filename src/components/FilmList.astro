@@ -83,6 +83,9 @@ import "./../global.css";
 
         col.appendChild(header);
 
+        const filmScroll = document.createElement('div');
+        filmScroll.className = 'film-scroll';
+
         for (const s of shows) {
           const card = document.createElement('div');
           card.className = 'film-card';
@@ -116,8 +119,10 @@ import "./../global.css";
             card.appendChild(a);
           }
 
-          col.appendChild(card);
+          filmScroll.appendChild(card);
         }
+
+        col.appendChild(filmScroll);
 
         columns.appendChild(col);
       }
