@@ -12,6 +12,8 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^6.4.3"
+    "astro": "^6.4.3",
+    "axios": "^1.17.0",
+    "cheerio": "^1.2.0"
   }
 }

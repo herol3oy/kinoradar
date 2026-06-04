@@ -1,4 +1,5 @@
 ---
+import FilmList from '../components/FilmList.astro';
 
 ---
 
@@ -9,9 +10,12 @@
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
+		<title>KinoRadar</title>
 	</head>
 	<body>
-		<h1>Astro</h1>
+		<h1>KinoRadar</h1>
+		<p>Today's films from Kinoteka, Kino Muranów, and U-Jazdowski:</p>
+		<FilmList />
 	</body>
 </html>
+

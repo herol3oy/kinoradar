@@ -1,0 +1,83 @@
+---
+---
+<div>
+  <label for="film-date">Select a date:</label>
+  <select id="film-date"></select>
+</div>
+<div id="film-list">Loading today's films...</div>
+<script type="module">
+  const container = document.getElementById('film-list');
+  const dateSelect = document.getElementById('film-date');
+
+  function formatDateValue(date) {
+    return date.toISOString().slice(0, 10);
+  }
+
+  function formatDateLabel(date) {
+    return date.toLocaleDateString('pl-PL', {
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+    });
+  }
+
+  function buildDateOptions() {
+    const today = new Date();
+    for (let i = 0; i < 7; i += 1) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const option = document.createElement('option');
+      option.value = formatDateValue(date);
+      option.textContent = `${formatDateLabel(date)} (${option.value})`;
+      dateSelect.appendChild(option);
+    }
+    if (dateSelect.options.length > 0) {
+      dateSelect.value = dateSelect.options[0].value;
+    }
+  }
+
+  async function load(date) {
+    if (!container) return;
+    if (!date && dateSelect) {
+      date = dateSelect.value;
+    }
+    container.textContent = 'Loading shows...';
+    try {
+      const params = new URLSearchParams({ date });
+      const res = await fetch(`/api/today.json?${params.toString()}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        container.textContent = 'No shows found for this day.';
+        return;
+      }
+      const ul = document.createElement('ul');
+      data.forEach((s) => {
+        const li = document.createElement('li');
+        const times = s.times && s.times.length ? ` — ${s.times.join(', ')}` : '';
+        li.textContent = `${s.title}${times} (${s.cinema || s.source || 'Unknown'})`;
+        if (s.link) {
+          const a = document.createElement('a');
+          a.href = s.link;
+          a.textContent = ' → details';
+          a.target = '_blank';
+          a.rel = 'noopener';
+          li.appendChild(a);
+        }
+        ul.appendChild(li);
+      });
+      container.innerHTML = '';
+      container.appendChild(ul);
+    } catch (err) {
+      container.textContent = 'Failed to load shows.';
+      console.error(err);
+    }
+  }
+
+  if (dateSelect) {
+    buildDateOptions();
+    dateSelect.addEventListener('change', () => {
+      load(dateSelect.value);
+    });
+    load(dateSelect.value);
+  }
+</script>
