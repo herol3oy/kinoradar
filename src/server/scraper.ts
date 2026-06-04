@@ -5,6 +5,7 @@ import { parseKinowisla, siteName as wislaName } from '../lib/parsers/kinowisla'
 import { parseKinoatlantic, siteName as atlanticName } from '../lib/parsers/kinoatlantic';
 import { parseKinoluna, siteName as kinolunaName } from '../lib/parsers/kinoluna';
 import { parseKinokultura, siteName as kinokulturaName } from '../lib/parsers/kinokultura';
+import { parseKinoamondo, siteName as amondoName } from '../lib/parsers/kinoamondo';
 import { normalizeMany } from '../lib/normalize';
 
 type Cached = { ts: number; data: any } | null;
@@ -34,6 +35,7 @@ export async function getTodayShows(date?: string, force = false) {
     parseKinoatlantic(day),
     parseKinoluna(day),
     parseKinokultura(day),
+    parseKinoamondo(day),
   ]);
   const all: any[] = [];
 
@@ -71,6 +73,11 @@ export async function getTodayShows(date?: string, force = false) {
     all.push(...normalizeMany(results[6].value, kinokulturaName, 'kinokultura'));
   } else if (results[6].status === 'rejected') {
     console.error('Kino Kultura parser error:', results[6].reason);
+  }
+  if (results[7].status === 'fulfilled') {
+    all.push(...normalizeMany(results[7].value, amondoName, 'kinoamondo'));
+  } else if (results[7].status === 'rejected') {
+    console.error('Kino Amondo parser error:', results[7].reason);
   }
 
   const seen = new Set();
