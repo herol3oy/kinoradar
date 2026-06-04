@@ -1,9 +1,8 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 export async function parseKinomuranow(date?: string | Date, url = 'https://kinomuranow.pl/repertuar') {
-  const res = await axios.get(url);
-  const $ = cheerio.load(res.data);
+  const res = await fetch(url);
+  const $ = cheerio.load(await res.text());
   const shows: Array<any> = [];
 
   $('div.calendar-seance-full__day').each((_, day) => {

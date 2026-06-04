@@ -1,12 +1,11 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 export async function parseIluzjon(date?: string | Date) {
   const day = typeof date === 'string' ? date : date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
   const timestamp = Math.floor(new Date(day + 'T00:00:00').getTime() / 1000);
   const url = `https://www.iluzjon.fn.org.pl/repertuar/ajax/${timestamp}`;
-  const res = await axios.get(url);
-  const $ = cheerio.load(res.data);
+  const res = await fetch(url);
+  const $ = cheerio.load(await res.text());
   const groups: Record<string, any> = {};
 
   $('table.times tbody tr').each((_, item) => {

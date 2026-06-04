@@ -1,11 +1,10 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 export async function parseKinokultura(date?: string | Date) {
   const day = typeof date === 'string' ? date : date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
   const url = `https://rezerwacja.kinokultura.pl/MSI/mvc/pl?sort=Name&date=${day}&datestart=0`;
-  const res = await axios.get(url);
-  const $ = cheerio.load(res.data);
+  const res = await fetch(url);
+  const $ = cheerio.load(await res.text());
   const shows: Array<any> = [];
 
   $('div.movies-movie').each((_, movie) => {

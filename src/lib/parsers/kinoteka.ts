@@ -1,11 +1,10 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 export async function parseKinoteka(date?: string | Date) {
   const day = typeof date === 'string' ? date : date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
   const url = `https://kinoteka.pl/repertuar/?date=${day}`;
-  const res = await axios.get(url);
-  const $ = cheerio.load(res.data);
+  const res = await fetch(url);
+  const $ = cheerio.load(await res.text());
   const shows: Array<any> = [];
 
   $('ul.e-movies-grid > li').each((_, item) => {

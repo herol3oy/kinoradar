@@ -43,7 +43,7 @@ export async function getTodayShows(date?: string, force = false) {
   const day = normalizeDate(date);
   const now = Date.now();
   const cached = cache[day];
-  
+
   if (!force && cached && now - cached.ts < TTL) {
     return cached.data;
   }
@@ -52,13 +52,13 @@ export async function getTodayShows(date?: string, force = false) {
   const results = await Promise.allSettled(
     CINEMA_PARSERS.map((cinema) => cinema.parse(day))
   );
-  
+
   const all: any[] = [];
 
   // 3. Process results safely using the index alignment guarantee
   results.forEach((result, index) => {
     const cinema = CINEMA_PARSERS[index];
-    
+
     if (result.status === 'fulfilled') {
       all.push(...normalizeMany(result.value, cinema.name, cinema.slug));
     } else {

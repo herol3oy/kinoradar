@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 const API_URL = 'https://bilety.kinogram.pl/api/graphql';
 
 const QUERY = `query getScreeningList($query: ScreeningListInput!) {
@@ -62,21 +60,26 @@ export async function parseKinogram(date?: string | Date) {
   const day = typeof date === 'string' ? date : date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
   const dateAt = new Date(day + 'T18:45:00.000Z').toISOString();
 
-  const res = await axios.post(API_URL, {
-    operationName: 'getScreeningList',
-    variables: {
-      query: {
-        dateAt,
-        genres: [],
-        soundTypes: [],
-        printTypes: [],
-        isPremiere: false,
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      operationName: 'getScreeningList',
+      variables: {
+        query: {
+          dateAt,
+          genres: [],
+          soundTypes: [],
+          printTypes: [],
+          isPremiere: false,
+        },
       },
-    },
-    query: QUERY,
+      query: QUERY,
+    }),
   });
 
-  const screenings = res.data?.data?.getScreeningList || [];
+  const data = await res.json();
+  const screenings = data?.data?.getScreeningList || [];
   const groups: Record<string, any> = {};
 
   for (const s of screenings) {
