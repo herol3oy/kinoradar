@@ -1,6 +1,7 @@
 import { parseKinoteka, siteName as kinotekaName } from '../lib/parsers/kinoteka';
 import { parseKinomuranow, siteName as muranowName } from '../lib/parsers/kinomuranow';
 import { parseUJazdowski, siteName as ujName } from '../lib/parsers/u-jazdowski';
+import { parseKinowisla, siteName as wislaName } from '../lib/parsers/kinowisla';
 import { normalizeMany } from '../lib/normalize';
 
 type Cached = { ts: number; data: any } | null;
@@ -26,6 +27,7 @@ export async function getTodayShows(date?: string, force = false) {
     parseKinoteka(day),
     parseKinomuranow(),
     parseUJazdowski(),
+    parseKinowisla(day),
   ]);
   const all: any[] = [];
 
@@ -43,6 +45,11 @@ export async function getTodayShows(date?: string, force = false) {
     all.push(...normalizeMany(results[2].value, ujName, 'u-jazdowski'));
   } else if (results[2].status === 'rejected') {
     console.error('U-Jazdowski parser error:', results[2].reason);
+  }
+  if (results[3].status === 'fulfilled') {
+    all.push(...normalizeMany(results[3].value, wislaName, 'kinowisla'));
+  } else if (results[3].status === 'rejected') {
+    console.error('Kino Wisła parser error:', results[3].reason);
   }
 
   const seen = new Set();

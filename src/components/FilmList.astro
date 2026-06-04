@@ -1,10 +1,148 @@
 ---
 ---
-<div>
-  <label for="film-date">Select a date:</label>
+<div class="controls-wrapper">
+  <label for="film-date">[_SELECT_DATE]:</label>
   <select id="film-date"></select>
 </div>
-<div id="film-list">Loading today's films...</div>
+
+<div id="film-list">READY...</div>
+
+<style is:global>
+  /* =========================================
+     Retro Digital Variables & Reset
+     ========================================= */
+  :root {
+    --bg-color: #000000;
+    --grid-box-bg: #0a0a0a;
+    --border-color: #222222;
+    --text-main: #e0e0e0;
+    --text-muted: #666666;
+    --neon-accent: #00ff66; /* Terminal green */
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: var(--font-mono);
+    padding: 2vw;
+    min-height: 100vh;
+    width: 100%;
+  }
+
+  /* Stark Retro Headings */
+  h1 {
+    font-size: 2rem;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    color: var(--neon-accent);
+    margin-bottom: 0.25rem;
+  }
+
+  body > p {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+
+  /* =========================================
+     Controls (Terminal Style)
+     ========================================= */
+  .controls-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px dashed var(--border-color);
+    padding: 0.5rem 1rem;
+    margin-bottom: 2.5rem;
+    font-size: 0.85rem;
+  }
+
+  .controls-wrapper label {
+    color: var(--neon-accent);
+  }
+
+  #film-date {
+    background: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    font-family: var(--font-mono);
+    padding: 0.25rem 0.5rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  #film-date:focus {
+    border-color: var(--neon-accent);
+  }
+
+  /* =========================================
+     The Whole-Screen Micro Grid
+     ========================================= */
+  #film-list ul {
+    display: grid;
+    /* Tiny boxes: scales from 200px to fill infinite horizontal space */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    list-style: none;
+  }
+
+  /* =========================================
+     The Little Box (Film Card)
+     ========================================= */
+  #film-list li {
+    background-color: var(--grid-box-bg);
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1.5rem;
+    position: relative;
+    word-break: break-word;
+  }
+
+  /* Digital Hover Trigger */
+  #film-list li:hover {
+    border-color: var(--neon-accent);
+    box-shadow: 0 0 10px rgba(0, 255, 102, 0.15);
+  }
+
+  /* Retro Action Link */
+  #film-list a {
+    text-decoration: none;
+    color: #000000;
+    background-color: var(--text-main);
+    font-weight: bold;
+    text-transform: uppercase;
+    text-align: center;
+    font-size: 0.75rem;
+    padding: 0.4rem 0;
+    display: block;
+    width: 100%;
+    margin-top: auto;
+  }
+
+  #film-list a:hover {
+    background-color: var(--neon-accent);
+  }
+
+  /* Custom Loading / Error Messages */
+  #film-list {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+  }
+</style>
+
 <script type="module">
   const container = document.getElementById('film-list');
   const dateSelect = document.getElementById('film-date');
@@ -13,6 +151,7 @@
     return date.toISOString().slice(0, 10);
   }
 
+  // Simplified format for tighter spaces
   function formatDateLabel(date) {
     return date.toLocaleDateString('pl-PL', {
       weekday: 'short',
@@ -28,7 +167,7 @@
       date.setDate(today.getDate() + i);
       const option = document.createElement('option');
       option.value = formatDateValue(date);
-      option.textContent = `${formatDateLabel(date)} (${option.value})`;
+      option.textContent = `${formatDateLabel(date)} [${option.value}]`;
       dateSelect.appendChild(option);
     }
     if (dateSelect.options.length > 0) {
@@ -41,24 +180,27 @@
     if (!date && dateSelect) {
       date = dateSelect.value;
     }
-    container.textContent = 'Loading shows...';
+    container.textContent = '>> LOADING_DATA...';
     try {
       const params = new URLSearchParams({ date });
       const res = await fetch(`/api/today.json?${params.toString()}`, { cache: 'no-store' });
       const data = await res.json();
       if (!Array.isArray(data) || data.length === 0) {
-        container.textContent = 'No shows found for this day.';
+        container.textContent = '>> NO_SHOWS_FOUND_FOR_THIS_DAY.';
         return;
       }
       const ul = document.createElement('ul');
       data.forEach((s) => {
         const li = document.createElement('li');
-        const times = s.times && s.times.length ? ` — ${s.times.join(', ')}` : '';
-        li.textContent = `${s.title}${times} (${s.cinema || s.source || 'Unknown'})`;
+        const times = s.times && s.times.length ? ` \n [${s.times.join(', ')}]` : '';
+        
+        // Output formatting optimized for smaller boxes
+        li.innerText = `${s.title} ${times} \n\n@ ${s.cinema || s.source || 'UNK'}`;
+        
         if (s.link) {
           const a = document.createElement('a');
           a.href = s.link;
-          a.textContent = ' → details';
+          a.textContent = 'LAUNCH_TICKET';
           a.target = '_blank';
           a.rel = 'noopener';
           li.appendChild(a);
@@ -68,7 +210,7 @@
       container.innerHTML = '';
       container.appendChild(ul);
     } catch (err) {
-      container.textContent = 'Failed to load shows.';
+      container.textContent = '>> ERROR_FAILED_TO_LOAD.';
       console.error(err);
     }
   }
