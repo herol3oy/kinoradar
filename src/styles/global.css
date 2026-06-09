@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+@theme {
+  --color-retro-bg: #0a0a0a;
+  --color-retro-surface: #111;
+  --color-retro-card: #1a1a1a;
+  --color-retro-cyan: #0ff;
+  --color-retro-magenta: #f0f;
+  --color-retro-yellow: #ff0;
+  --color-retro-green: #0f0;
+  --color-retro-border: #222;
+}
+
+html {
+  background-color: var(--color-retro-bg);
+}
+
+body {
+  background-color: var(--color-retro-bg);
+  color: #ccc;
+  font-family: "Courier New", Courier, monospace;
+}
+
+::selection {
+  background: var(--color-retro-magenta);
+  color: #000;
+}

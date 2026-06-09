@@ -1,6 +1,9 @@
 ---
 import "../styles/global.css";
+import { getTodayShows } from "../server/scraper";
+import App from "../components/App";
 
+const shows = await getTodayShows();
 ---
 
 <html lang="en">
@@ -10,9 +13,23 @@ import "../styles/global.css";
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
+		<title>KinoRadar - Today's Shows</title>
 	</head>
 	<body>
-		<h1 class="text-3xl text-red-500 font-bold underline">Astro</h1>
+		<nav class="border-b border-retro-border px-3 py-3">
+			<span
+				class="text-2xl font-bold tracking-widest text-retro-magenta uppercase [text-shadow:0_0_10px_var(--color-retro-magenta),0_0_30px_var(--color-retro-magenta)]"
+			>
+				KINORADAR
+			</span>
+		</nav>
+		<p class="text-gray-500 text-xs tracking-wider uppercase px-3 py-2 border-b border-retro-border">
+			Today's films from Kinoteka, Muranów, U-Jazdowski, Wisła, Atlantic,
+			Kinoluna, Kultura, Amondo, Elektronik, Cytadela, Iluzjon and
+			Kinogram:
+		</p>
+		<main>
+			<App shows={shows} client:load />
+		</main>
 	</body>
 </html>
