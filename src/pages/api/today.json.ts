@@ -9,7 +9,10 @@ export const GET: APIRoute = async ({ request }) => {
     const data = await getTodayShows(date, force);
     return new Response(JSON.stringify(data), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+      },
     });
   } catch (err: any) {
     return new Response(JSON.stringify({ error: String(err) }), {
