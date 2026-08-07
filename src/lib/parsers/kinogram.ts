@@ -78,6 +78,7 @@ export async function parseKinogram(date?: string | Date) {
     }),
   });
 
+  if (!res.ok) throw new Error(`Kinogram returned ${res.status}`);
   const data = await res.json();
   const screenings = data?.data?.getScreeningList || [];
   const groups: Record<string, any> = {};

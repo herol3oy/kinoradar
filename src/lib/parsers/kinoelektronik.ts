@@ -4,6 +4,7 @@ export async function parseKinoelektronik(date?: string | Date) {
   const day = typeof date === 'string' ? date : date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
   const url = `https://kinoelektronik.pl/?b24_day=${day}`;
   const res = await fetch(url);
+  if (!res.ok) throw new Error(`Kino Elektronik returned ${res.status}`);
   const $ = cheerio.load(await res.text());
   const shows: Array<any> = [];
 

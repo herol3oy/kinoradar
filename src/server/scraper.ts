@@ -12,11 +12,6 @@ import { parseIluzjon, siteName as iluzjonName } from '../lib/parsers/iluzjon';
 import { parseKinogram, siteName as kinogramName } from '../lib/parsers/kinogram';
 import { normalizeMany } from '../lib/normalize';
 
-type Cached = { ts: number; data: any[] } | null;
-const cache: Record<string, Cached> = {};
-const TTL = 1000 * 60 * 5; // 5 minutes
-
-// 1. Centralized configuration mapping for easy scaling
 const CINEMA_PARSERS = [
   { parse: parseKinoteka, name: kinotekaName, slug: 'kinoteka', label: 'Kinoteka' },
   { parse: parseKinomuranow, name: muranowName, slug: 'kinomuranow', label: 'Kino Muranów' },
@@ -39,23 +34,15 @@ function normalizeDate(date?: string): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export async function getTodayShows(date?: string, force = false) {
+export async function getTodayShows(date?: string) {
   const day = normalizeDate(date);
-  const now = Date.now();
-  const cached = cache[day];
 
-  if (!force && cached && now - cached.ts < TTL) {
-    return cached.data;
-  }
-
-  // 2. Map dynamically over the parsers
   const results = await Promise.allSettled(
     CINEMA_PARSERS.map((cinema) => cinema.parse(day))
   );
 
   const all: any[] = [];
 
-  // 3. Process results safely using the index alignment guarantee
   results.forEach((result, index) => {
     const cinema = CINEMA_PARSERS[index];
 
@@ -66,7 +53,6 @@ export async function getTodayShows(date?: string, force = false) {
     }
   });
 
-  // 4. Deduplication
   const seen = new Set<string>();
   const deduped = all.filter((s) => {
     const key = `${s.title.toLowerCase()}|${s.cinema || s.source || ''}`;
@@ -75,6 +61,5 @@ export async function getTodayShows(date?: string, force = false) {
     return true;
   });
 
-  cache[day] = { ts: now, data: deduped };
   return deduped;
 }

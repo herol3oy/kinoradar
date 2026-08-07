@@ -5,6 +5,7 @@ export async function parseIluzjon(date?: string | Date) {
   const timestamp = Math.floor(new Date(day + 'T00:00:00').getTime() / 1000);
   const url = `https://www.iluzjon.fn.org.pl/repertuar/ajax/${timestamp}`;
   const res = await fetch(url);
+  if (!res.ok) throw new Error(`Iluzjon returned ${res.status}`);
   const $ = cheerio.load(await res.text());
   const groups: Record<string, any> = {};
 

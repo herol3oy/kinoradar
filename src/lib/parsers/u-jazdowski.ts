@@ -6,6 +6,7 @@ export async function parseUJazdowski(date?: string | Date) {
   const ut = Math.floor(Date.UTC(y, m - 1, d, 0, 0, 0) / 1000) - 7200;
   const url = `https://u-jazdowski.pl/kino/repertuar?ut=${ut}`;
   const res = await fetch(url);
+  if (!res.ok) throw new Error(`U-Jazdowski returned ${res.status}`);
   const $ = cheerio.load(await res.text());
   const shows: Array<any> = [];
 

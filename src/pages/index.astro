@@ -1,9 +1,17 @@
 ---
 import "../styles/global.css";
+import { env } from "cloudflare:workers";
+import { getCachedShows } from "../server/kv";
 import { getTodayShows } from "../server/scraper";
+import { setCachedShows } from "../server/kv";
 import App from "../components/App";
 
-const shows = await getTodayShows();
+const today = new Date().toISOString().slice(0, 10);
+let shows = await getCachedShows(env.SHOWTIMES, today);
+if (!shows) {
+  shows = await getTodayShows(today);
+  await setCachedShows(env.SHOWTIMES, today, shows);
+}
 ---
 
 <html lang="en">
