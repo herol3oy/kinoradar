@@ -1,12 +1,31 @@
 import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import type { Show } from "../lib/normalize";
+import type { ViewMode } from "./ShowFilters";
 
 interface Props {
   shows: Show[];
+  view: ViewMode;
 }
 
-function CinemaCarousel({ cinema, shows }: { cinema: string; shows: Show[] }) {
+function normalizeTitle(title: string): string {
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pl")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function ShowCarousel({
+  heading,
+  shows,
+  view,
+}: {
+  heading: string;
+  shows: Show[];
+  view: ViewMode;
+}) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ align: "start" });
   const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
   const [nextBtnDisabled, setNextBtnDisabled] = useState(true);
@@ -36,7 +55,7 @@ function CinemaCarousel({ cinema, shows }: { cinema: string; shows: Show[] }) {
     <section className="border-b border-retro-border pb-6 mb-6 last:border-b-0">
       <div className="px-4 mb-4">
         <h2 className="text-xl font-bold tracking-widest uppercase text-retro-cyan [text-shadow:0_0_8px_var(--color-retro-cyan)]">
-          {cinema}
+          {heading}
         </h2>
       </div>
 
@@ -49,7 +68,7 @@ function CinemaCarousel({ cinema, shows }: { cinema: string; shows: Show[] }) {
               
               return (
                 <div
-                  key={`${show.title}-${i}`}
+                  key={`${show.cinema}-${show.title}-${i}`}
                   className="flex-[0_0_auto] min-w-0"
                   style={{ flexBasis: "220px" }}
                 >
@@ -67,7 +86,7 @@ function CinemaCarousel({ cinema, shows }: { cinema: string; shows: Show[] }) {
                       />
                     )}
                     <h3 className="text-sm font-bold text-retro-cyan uppercase tracking-wider mb-2 leading-relaxed">
-                      {show.title}
+                      {view === "film" ? show.cinema : show.title}
                     </h3>
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {show.times.map((time, j) => (
@@ -117,7 +136,7 @@ function CinemaCarousel({ cinema, shows }: { cinema: string; shows: Show[] }) {
   );
 }
 
-export default function TodayShows({ shows }: Props) {
+export default function TodayShows({ shows, view }: Props) {
   if (!shows.length) {
     return (
       <div className="border border-retro-border bg-retro-surface px-4 py-10 text-center">
@@ -129,15 +148,25 @@ export default function TodayShows({ shows }: Props) {
     );
   }
 
-  const grouped = shows.reduce<Record<string, Show[]>>((acc, show) => {
-    (acc[show.cinema] ??= []).push(show);
-    return acc;
-  }, {});
+  const groups = new Map<string, { heading: string; shows: Show[] }>();
+
+  shows.forEach((show) => {
+    const key = view === "film" ? normalizeTitle(show.title) : show.cinema;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.shows.push(show);
+    } else {
+      groups.set(key, {
+        heading: view === "film" ? show.title : show.cinema,
+        shows: [show],
+      });
+    }
+  });
 
   return (
     <div className="w-full">
-      {Object.entries(grouped).map(([cinema, cinemaShows]) => (
-        <CinemaCarousel key={cinema} cinema={cinema} shows={cinemaShows} />
+      {[...groups.entries()].map(([key, group]) => (
+        <ShowCarousel key={`${view}-${key}`} heading={group.heading} shows={group.shows} view={view} />
       ))}
     </div>
   );

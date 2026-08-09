@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Show } from "../lib/normalize";
 import DateSelector from "./DateSelector";
-import ShowFilters, { type SortMode } from "./ShowFilters";
+import ShowFilters, { type SortMode, type ViewMode } from "./ShowFilters";
 import TodayShows from "./TodayShows";
 
 interface Props {
@@ -32,6 +32,7 @@ export default function App({ shows: initialShows }: Props) {
   const [toTime, setToTime] = useState("");
   const [startingSoon, setStartingSoon] = useState(false);
   const [sort, setSort] = useState<SortMode>("cinema");
+  const [view, setView] = useState<ViewMode>("cinema");
 
   const cinemas = useMemo(
     () => [...new Set(shows.map((show) => show.cinema))].sort((a, b) => a.localeCompare(b, "pl")),
@@ -75,6 +76,11 @@ export default function App({ shows: initialShows }: Props) {
     });
   }, [cinema, fromTime, query, shows, sort, startingSoon, toTime]);
 
+  const filmCount = useMemo(
+    () => new Set(filteredShows.map((show) => normalizeSearch(show.title.trim()))).size,
+    [filteredShows],
+  );
+
   const resetFilters = () => {
     setQuery("");
     setCinema("");
@@ -82,6 +88,11 @@ export default function App({ shows: initialShows }: Props) {
     setToTime("");
     setStartingSoon(false);
     setSort("cinema");
+  };
+
+  const handleViewChange = (nextView: ViewMode) => {
+    setView(nextView);
+    if (nextView === "film" && sort === "cinema") setSort("title");
   };
 
   const handleDateChange = async (date: string) => {
@@ -122,17 +133,19 @@ export default function App({ shows: initialShows }: Props) {
             toTime={toTime}
             startingSoon={startingSoon}
             sort={sort}
+            view={view}
             startingSoonAvailable={selectedDate === today}
-            resultCount={filteredShows.length}
+            resultCount={filmCount}
             onQueryChange={setQuery}
             onCinemaChange={setCinema}
             onFromTimeChange={setFromTime}
             onToTimeChange={setToTime}
             onStartingSoonChange={setStartingSoon}
             onSortChange={setSort}
+            onViewChange={handleViewChange}
             onReset={resetFilters}
           />
-          <TodayShows shows={filteredShows} />
+          <TodayShows shows={filteredShows} view={view} />
         </>
       )}
     </div>

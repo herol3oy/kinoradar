@@ -1,4 +1,5 @@
 export type SortMode = "cinema" | "title" | "time";
+export type ViewMode = "cinema" | "film";
 
 interface Props {
   cinemas: string[];
@@ -8,6 +9,7 @@ interface Props {
   toTime: string;
   startingSoon: boolean;
   sort: SortMode;
+  view: ViewMode;
   startingSoonAvailable: boolean;
   resultCount: number;
   onQueryChange: (value: string) => void;
@@ -16,6 +18,7 @@ interface Props {
   onToTimeChange: (value: string) => void;
   onStartingSoonChange: (value: boolean) => void;
   onSortChange: (value: SortMode) => void;
+  onViewChange: (value: ViewMode) => void;
   onReset: () => void;
 }
 
@@ -30,6 +33,7 @@ export default function ShowFilters({
   toTime,
   startingSoon,
   sort,
+  view,
   startingSoonAvailable,
   resultCount,
   onQueryChange,
@@ -38,6 +42,7 @@ export default function ShowFilters({
   onToTimeChange,
   onStartingSoonChange,
   onSortChange,
+  onViewChange,
   onReset,
 }: Props) {
   const hasFilters = Boolean(query || cinema || fromTime || toTime || startingSoon);
@@ -97,6 +102,27 @@ export default function ShowFilters({
       </div>
 
       <div className="mt-3 flex flex-wrap items-end gap-3 border-t border-retro-border pt-3">
+        <fieldset>
+          <legend className="text-xs tracking-widest uppercase text-gray-500">[_VIEW]</legend>
+          <div className="mt-1 flex" role="group">
+            {(["cinema", "film"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => onViewChange(mode)}
+                aria-pressed={view === mode}
+                className={`border px-3 py-2 text-xs tracking-widest uppercase transition-colors first:border-r-0 ${
+                  view === mode
+                    ? "border-retro-cyan bg-retro-cyan text-black"
+                    : "border-retro-border text-gray-500 hover:border-retro-cyan hover:text-retro-cyan"
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
         <label className="text-xs tracking-widest uppercase text-gray-500">
           [_SORT]
           <select
