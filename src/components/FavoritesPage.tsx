@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { translations, type Locale } from "../i18n/translations";
 import { decodeSharedFavorites, encodeSharedFavorites, favoriteKey, type FavoriteFilm } from "../lib/favorites";
 import type { Show } from "../lib/normalize";
+import { filmSlug } from "../lib/film";
 
 type Props = {
   locale: Locale;
@@ -109,6 +110,7 @@ export default function FavoritesPage({ locale, favorites, onRemove, onClear }: 
                     <div className="mt-5 border-t border-white/8 pt-3">
                       <p className="text-xs font-bold tracking-wide text-gray-300">{film.cinema}</p>
                       <span className="mt-2 inline-block border border-retro-yellow/30 bg-retro-yellow/5 px-3 py-1.5 text-sm font-bold text-retro-yellow">{film.time}</span>
+                      <a href={`/${locale}/film/${filmSlug(film.title)}/?date=${film.date}`} className="mt-4 block text-[10px] font-bold tracking-widest text-retro-cyan uppercase hover:text-white">{t.filmPage.allScreenings} →</a>
                       {ticketLink && <a href={ticketLink} target="_blank" rel="noopener noreferrer" className="mt-3 block text-[10px] font-bold tracking-widest text-retro-green uppercase hover:text-retro-cyan">{t.shows.buyTickets} ↗</a>}
                       {!matchingShow && !ticketLink && <p className="mt-3 text-xs leading-5 text-gray-600">{t.favorites.unavailable}</p>}
                     </div>

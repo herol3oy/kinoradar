@@ -90,6 +90,16 @@ export interface Translations {
     invalid: string;
     date: string;
   };
+  filmPage: {
+    eyebrow: string;
+    description: string;
+    allScreenings: string;
+    cinemas: string;
+    noScreenings: string;
+    noScreeningsDescription: string;
+    loadFailed: string;
+    partialResults: string;
+  };
 }
 
 export const translations: Record<Locale, Translations> = {
@@ -197,6 +207,16 @@ export const translations: Record<Locale, Translations> = {
       invalid: "Ten link do listy jest nieprawidłowy lub nieaktualny.",
       date: "Data",
     },
+    filmPage: {
+      eyebrow: "Wszystkie seanse filmu",
+      description: "Porównaj wszystkie dostępne godziny i kina dla wybranej daty.",
+      allScreenings: "Wszystkie seanse",
+      cinemas: "Dostępne kina",
+      noScreenings: "Brak seansów tego filmu",
+      noScreeningsDescription: "Wybierz inną datę, aby sprawdzić kolejne seanse.",
+      loadFailed: "Nie udało się wczytać seansów. Spróbuj ponownie.",
+      partialResults: "Niektórych kin nie udało się zaktualizować. Wyniki mogą być niepełne.",
+    },
   },
   en: {
     meta: {
@@ -301,6 +321,16 @@ export const translations: Record<Locale, Translations> = {
       unavailable: "No current screenings for the saved date.",
       invalid: "This shared-list link is invalid or out of date.",
       date: "Date",
+    },
+    filmPage: {
+      eyebrow: "All film screenings",
+      description: "Compare every available time and cinema for the selected date.",
+      allScreenings: "All screenings",
+      cinemas: "Available cinemas",
+      noScreenings: "No screenings for this film",
+      noScreeningsDescription: "Choose another date to check upcoming screenings.",
+      loadFailed: "Screenings could not be loaded. Please try again.",
+      partialResults: "Some cinemas could not be updated. Results may be incomplete.",
     },
   },
 };

@@ -3,6 +3,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { countLabel, translations, type Locale } from "../i18n/translations";
 import type { Show } from "../lib/normalize";
 import { favoriteKey } from "../lib/favorites";
+import { filmSlug } from "../lib/film";
 import type { ViewMode } from "./ShowFilters";
 
 interface Props {
@@ -136,11 +137,12 @@ function ShowCarousel({
                             </button>;
                         })}
                       </div>
-                      {show.link && (
-                        <a href={show.link} target="_blank" rel="noopener noreferrer" className="mt-auto flex items-center justify-between border-t border-white/8 pt-3 text-[10px] font-bold tracking-[0.16em] text-retro-green uppercase transition-colors hover:text-retro-cyan">
-                          {t.shows.buyTickets} <span aria-hidden="true">↗</span>
+                      <div className="mt-auto space-y-2 border-t border-white/8 pt-3">
+                        <a href={`/${locale}/film/${filmSlug(show.title)}/?date=${selectedDate}`} className="flex items-center justify-between text-[10px] font-bold tracking-[0.16em] text-retro-cyan uppercase transition-colors hover:text-white">
+                          {t.filmPage.allScreenings} <span aria-hidden="true">→</span>
                         </a>
-                      )}
+                        {show.link && <a href={show.link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between text-[10px] font-bold tracking-[0.16em] text-retro-green uppercase transition-colors hover:text-retro-cyan">{t.shows.buyTickets} <span aria-hidden="true">↗</span></a>}
+                      </div>
                     </div>
                   </article>
                 </div>

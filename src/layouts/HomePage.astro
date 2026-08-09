@@ -9,34 +9,49 @@ import { setCachedShows } from "../server/kv";
 import { getShowsReport } from "../server/scraper";
 import { cinemas, type Cinema } from "../data/cinemas";
 import FavoritesNavLink from "../components/FavoritesNavLink";
+import FilmDetails from "../components/FilmDetails";
+import type { Show } from "../lib/normalize";
 
 interface Props {
   locale: Locale;
   cinema?: Cinema;
   favoritesPage?: boolean;
+  film?: { slug: string; title: string; selectedDate: string; shows: Show[]; failedCinemas: string[] };
 }
 
-const { locale, cinema, favoritesPage = false } = Astro.props;
+const { locale, cinema, favoritesPage = false, film } = Astro.props;
 const t = translations[locale];
 const otherLocale: Locale = locale === "pl" ? "en" : "pl";
-const pagePath = favoritesPage ? `/${locale}/favorites/` : cinema ? `/${locale}/kino/${cinema.slug}/` : `/${locale}/`;
-const sharedQuery = favoritesPage ? Astro.url.search : "";
-const otherPath = favoritesPage ? `/${otherLocale}/favorites/${sharedQuery}` : cinema ? `/${otherLocale}/kino/${cinema.slug}/` : `/${otherLocale}/`;
+const pagePath = film ? `/${locale}/film/${film.slug}/` : favoritesPage ? `/${locale}/favorites/` : cinema ? `/${locale}/kino/${cinema.slug}/` : `/${locale}/`;
+const sharedQuery = (favoritesPage || film) ? Astro.url.search : "";
+const otherPath = film ? `/${otherLocale}/film/${film.slug}/${sharedQuery}` : favoritesPage ? `/${otherLocale}/favorites/${sharedQuery}` : cinema ? `/${otherLocale}/kino/${cinema.slug}/` : `/${otherLocale}/`;
 const canonicalUrl = new URL(pagePath, Astro.site);
-const polishUrl = new URL(favoritesPage ? "/pl/favorites/" : cinema ? `/pl/kino/${cinema.slug}/` : "/pl/", Astro.site);
-const englishUrl = new URL(favoritesPage ? "/en/favorites/" : cinema ? `/en/kino/${cinema.slug}/` : "/en/", Astro.site);
-const title = favoritesPage
+const polishUrl = new URL(film ? `/pl/film/${film.slug}/` : favoritesPage ? "/pl/favorites/" : cinema ? `/pl/kino/${cinema.slug}/` : "/pl/", Astro.site);
+const englishUrl = new URL(film ? `/en/film/${film.slug}/` : favoritesPage ? "/en/favorites/" : cinema ? `/en/kino/${cinema.slug}/` : "/en/", Astro.site);
+const title = film
+  ? `${film.title} — ${t.filmPage.allScreenings} | KinoRadar`
+  : favoritesPage
   ? `${t.favorites.title} | KinoRadar`
   : cinema
   ? `${cinema.label} — ${t.cinemaPage.schedule} | KinoRadar`
   : t.meta.title;
-const description = favoritesPage
+const description = film
+  ? `${film.title}: ${t.filmPage.description}`
+  : favoritesPage
   ? t.favorites.description
   : cinema
   ? `${cinema.label}: ${t.cinemaPage.description}`
   : t.meta.description;
 const socialImage = new URL("/og-image.png", Astro.site);
-const jsonLd = cinema
+const jsonLd = film
+  ? [
+      { "@context": "https://schema.org", "@type": "WebPage", name: title, description, url: canonicalUrl.toString(), inLanguage: locale },
+      { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
+        { "@type": "ListItem", position: 1, name: t.cinemaPage.home, item: new URL(`/${locale}/`, Astro.site).toString() },
+        { "@type": "ListItem", position: 2, name: film.title, item: canonicalUrl.toString() },
+      ] },
+    ]
+  : cinema
   ? [
       {
         "@context": "https://schema.org",
@@ -66,7 +81,7 @@ const serializedJsonLd = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
 const today = new Date().toISOString().slice(0, 10);
 let schedule = { shows: [], updatedAt: null, failedCinemas: [] } as Awaited<ReturnType<typeof setCachedShows>>;
-if (!favoritesPage) {
+if (!favoritesPage && !film) {
   const cachedSchedule = await getCachedSchedule(env.SHOWTIMES, today);
   if (cachedSchedule) {
     schedule = cachedSchedule;
@@ -134,22 +149,18 @@ if (!favoritesPage) {
       </div>
     </header>
     <main class="pb-16">
-      {(cinema || favoritesPage) && (
+      {(cinema || favoritesPage || film) && (
         <nav aria-label="Breadcrumb" class="mx-auto max-w-7xl px-4 pt-6 text-[10px] tracking-widest text-gray-600 uppercase sm:px-6 lg:px-8">
           <a href={`/${locale}/`} class="transition-colors hover:text-retro-cyan">{t.cinemaPage.home}</a>
           <span aria-hidden="true" class="px-2">/</span>
-          <span aria-current="page">{favoritesPage ? t.favorites.nav : cinema?.label}</span>
+          <span aria-current="page">{film?.title ?? (favoritesPage ? t.favorites.nav : cinema?.label)}</span>
         </nav>
       )}
-      <App
-        locale={locale}
-        cinema={cinema}
-        favoritesPage={favoritesPage}
-        shows={schedule.shows}
-        updatedAt={schedule.updatedAt}
-        failedCinemas={schedule.failedCinemas}
-        client:load
-      />
+      {film ? (
+        <FilmDetails locale={locale} slug={film.slug} title={film.title} selectedDate={film.selectedDate} shows={film.shows} failedCinemas={film.failedCinemas} client:load />
+      ) : (
+        <App locale={locale} cinema={cinema} favoritesPage={favoritesPage} shows={schedule.shows} updatedAt={schedule.updatedAt} failedCinemas={schedule.failedCinemas} client:load />
+      )}
     </main>
     <footer class="border-t border-white/8 px-4 py-8">
       <nav aria-label={t.cinemaPage.cinemas} class="mx-auto mb-6 flex max-w-5xl flex-wrap justify-center gap-x-5 gap-y-3 text-[10px] tracking-widest text-gray-600 uppercase">

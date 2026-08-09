@@ -21,7 +21,7 @@ Each cinema has its own parser because the source websites use different markup 
 
 ## How it works
 
-On the first visit, Astro renders today's schedule on the server. The page hydrates a React application in the browser, where the date selector can request schedules for the following six days. Results are grouped by cinema and displayed in horizontal carousels.
+On the first visit, Astro renders today's schedule on the server. The page hydrates a React application in the browser, where the date selector can request schedules for the following six days. Results are grouped by cinema and displayed in horizontal carousels. Each film links to a localized film page that combines its screenings across every cinema for the selected date.
 
 ```mermaid
 flowchart LR
@@ -79,6 +79,7 @@ KinoRadar uses Astro's server output with the Cloudflare adapter. Astro owns rou
 | Page and SSR | Renders localized home and cinema pages from today's cached data | `src/layouts/HomePage.astro`, `src/pages/` |
 | Client UI | Selects a date, fetches new data, groups shows by cinema, and renders carousels | `src/components/` |
 | Favorites | Stores up to 20 film, cinema, date, and time combinations in the browser and encodes read-only shared lists in the URL | `src/lib/favorites.ts`, `src/lib/useFavorites.ts`, `src/components/FavoritesPage.tsx` |
+| Film pages | Resolves a normalized title slug and aggregates all cinema times for the selected date | `src/pages/[locale]/film/[slug].astro`, `src/components/FilmDetails.tsx` |
 | JSON API | Validates the requested date and implements cache-first retrieval | `src/pages/api/today.json.ts` |
 | Scraping | Runs cinema parsers concurrently, tolerates individual failures, normalizes results, and removes duplicates | `src/server/scraper.ts` |
 | Cinema adapters | Fetch and extract schedules from each cinema's website | `src/lib/parsers/` |
@@ -117,6 +118,7 @@ Cache entries use the key format `SHOWTIMES:YYYY-MM-DD`. Deduplication uses the 
 │   ├── pages/
 │   │   ├── api/today.json.ts  # Date-based schedule endpoint
 │   │   ├── [locale]/kino/     # Localized cinema landing pages
+│   │   ├── [locale]/film/     # Localized aggregate film pages
 │   │   ├── en/ and pl/        # Localized home and favorites pages
 │   │   └── index.astro        # Permanent redirect to Polish
 │   ├── server/
