@@ -1,6 +1,6 @@
 # KinoRadar
 
-KinoRadar collects film schedules from independent cinemas in Warsaw and presents them in one place in Polish and English. Pick any of the next seven days, browse films grouped by cinema, see available screening times, and follow a film card to the cinema's ticket page.
+KinoRadar collects film schedules from independent cinemas in Warsaw and presents them in one place in Polish and English. Pick any of the next seven days, browse films grouped by cinema or film, see available screening times, and follow a ticket link to the cinema's website. Individual screening times can be starred and shared as a read-only favorites list.
 
 The application currently aggregates:
 
@@ -36,6 +36,10 @@ flowchart LR
     Visitor -->|Select another date| API[GET /api/today.json]
     API --> KV
     API -. cache miss .-> Scraper
+    Visitor -->|Star a film| Storage[(Browser localStorage)]
+    Storage --> Favorites[Favorites page]
+    Favorites -->|Copy URL-encoded list| Friend[Friend's browser]
+    Friend -->|Resolve screening details| API
 ```
 
 The API accepts a `date=YYYY-MM-DD` query parameter. It checks KV first and, on a miss, scrapes all cinemas concurrently, normalizes and deduplicates the shows, stores the result for 24 hours, and returns JSON. Passing `force=1` bypasses the cache and refreshes the selected date.
@@ -74,6 +78,7 @@ KinoRadar uses Astro's server output with the Cloudflare adapter. Astro owns rou
 | --- | --- | --- |
 | Page and SSR | Renders localized home and cinema pages from today's cached data | `src/layouts/HomePage.astro`, `src/pages/` |
 | Client UI | Selects a date, fetches new data, groups shows by cinema, and renders carousels | `src/components/` |
+| Favorites | Stores up to 20 film, cinema, date, and time combinations in the browser and encodes read-only shared lists in the URL | `src/lib/favorites.ts`, `src/lib/useFavorites.ts`, `src/components/FavoritesPage.tsx` |
 | JSON API | Validates the requested date and implements cache-first retrieval | `src/pages/api/today.json.ts` |
 | Scraping | Runs cinema parsers concurrently, tolerates individual failures, normalizes results, and removes duplicates | `src/server/scraper.ts` |
 | Cinema adapters | Fetch and extract schedules from each cinema's website | `src/lib/parsers/` |
@@ -112,7 +117,7 @@ Cache entries use the key format `SHOWTIMES:YYYY-MM-DD`. Deduplication uses the 
 │   ├── pages/
 │   │   ├── api/today.json.ts  # Date-based schedule endpoint
 │   │   ├── [locale]/kino/     # Localized cinema landing pages
-│   │   ├── en/ and pl/        # Localized home pages
+│   │   ├── en/ and pl/        # Localized home and favorites pages
 │   │   └── index.astro        # Permanent redirect to Polish
 │   ├── server/
 │   │   ├── kv.ts              # KV cache access
@@ -193,6 +198,8 @@ After deploying changes to routes or metadata:
 7. Monitor indexing, queries, click-through rate, and Core Web Vitals after releases.
 
 The sitemap contains the two localized homepages and 12 cinema pages per language. Cinema pages intentionally omit `LocalBusiness` markup until verified addresses and venue details are available.
+
+Favorites live only in the visitor's browser; no account or backend write is required. Shared URLs contain only film titles and selected dates, are limited to 20 items, render read-only, use clean canonical URLs, and are excluded from indexing and the sitemap.
 
 ## Deployment
 

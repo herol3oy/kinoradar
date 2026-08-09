@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { countLabel, translations, type Locale } from "../i18n/translations";
 import type { Show } from "../lib/normalize";
+import { favoriteKey } from "../lib/favorites";
 import type { ViewMode } from "./ShowFilters";
 
 interface Props {
@@ -9,6 +10,9 @@ interface Props {
   shows: Show[];
   view: ViewMode;
   emptyMessage?: string;
+  selectedDate: string;
+  favoriteKeys: Set<string>;
+  onToggleFavorite: (show: Show, time: string) => void;
 }
 
 function normalizeTitle(title: string): string {
@@ -26,25 +30,31 @@ function ShowCarousel({
   view,
   locale,
   source,
+  selectedDate,
+  favoriteKeys,
+  onToggleFavorite,
 }: {
   heading: string;
   shows: Show[];
   view: ViewMode;
   locale: Locale;
   source?: string;
+  selectedDate: string;
+  favoriteKeys: Set<string>;
+  onToggleFavorite: (show: Show, time: string) => void;
 }) {
   const t = translations[locale];
   const [emblaRef, emblaApi] = useEmblaCarousel({ align: "start" });
   const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
   const [nextBtnDisabled, setNextBtnDisabled] = useState(true);
 
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+  const scrollPrev = () => emblaApi?.scrollPrev();
+  const scrollNext = () => emblaApi?.scrollNext();
 
-  const onSelect = useCallback((api: NonNullable<typeof emblaApi>) => {
+  const onSelect = (api: NonNullable<typeof emblaApi>) => {
     setPrevBtnDisabled(!api.canScrollPrev());
     setNextBtnDisabled(!api.canScrollNext());
-  }, []);
+  };
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -83,20 +93,14 @@ function ShowCarousel({
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex gap-3">
             {shows.map((show, i) => {
-              // Use anchor tag if link exists, otherwise fall back to a div
-              const CardElement = show.link ? "a" : "div";
-              
               return (
                 <div
                   key={`${show.cinema}-${show.title}-${i}`}
                   className="flex-[0_0_auto] min-w-0"
                   style={{ flexBasis: "250px" }}
                 >
-                  <CardElement
-                    {...(show.link
-                      ? { href: show.link, target: "_blank", rel: "noopener noreferrer" }
-                      : {})}
-                    className="group relative flex h-full min-h-56 flex-col overflow-hidden border border-white/8 bg-retro-card transition-all duration-300 hover:-translate-y-1 hover:border-retro-yellow/50 hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)] cursor-pointer select-none"
+                  <article
+                    className="group relative flex h-full min-h-56 flex-col overflow-hidden border border-white/8 bg-retro-card transition-all duration-300 hover:-translate-y-1 hover:border-retro-yellow/50 hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
                   >
                     {show.poster && (
                       <div className="relative aspect-[16/10] overflow-hidden bg-black">
@@ -117,22 +121,28 @@ function ShowCarousel({
                         <span className="mb-3 text-[9px] tracking-widest text-gray-600 uppercase">{t.shows.warsawVenue}</span>
                       )}
                       <div className="mb-5 flex flex-wrap gap-1.5">
-                        {show.times.map((time, j) => (
-                          <span
-                            key={`${time}-${j}`}
-                            className="border border-retro-yellow/20 bg-retro-yellow/5 px-2 py-1 text-xs font-bold text-retro-yellow"
-                          >
-                            {time}
-                          </span>
-                        ))}
+                        {show.times.map((time, j) => {
+                          const isFavorite = favoriteKeys.has(favoriteKey(show.title, selectedDate, time, show.cinema));
+                          return <button
+                              type="button"
+                              key={`${time}-${j}`}
+                              aria-pressed={isFavorite}
+                              aria-label={`${isFavorite ? t.favorites.remove : t.favorites.add}: ${show.title}, ${time}`}
+                              title={isFavorite ? t.favorites.remove : t.favorites.add}
+                              onClick={() => onToggleFavorite(show, time)}
+                              className={`flex items-center gap-1.5 border px-2 py-1 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-retro-cyan ${isFavorite ? "border-retro-yellow bg-retro-yellow/15 text-retro-yellow" : "border-retro-yellow/20 bg-retro-yellow/5 text-retro-yellow hover:border-retro-yellow"}`}
+                            >
+                              <span aria-hidden="true">{isFavorite ? "★" : "☆"}</span>{time}
+                            </button>;
+                        })}
                       </div>
                       {show.link && (
-                        <span className="mt-auto flex items-center justify-between border-t border-white/8 pt-3 text-[10px] font-bold tracking-[0.16em] text-retro-green uppercase transition-colors group-hover:text-retro-cyan">
+                        <a href={show.link} target="_blank" rel="noopener noreferrer" className="mt-auto flex items-center justify-between border-t border-white/8 pt-3 text-[10px] font-bold tracking-[0.16em] text-retro-green uppercase transition-colors hover:text-retro-cyan">
                           {t.shows.buyTickets} <span aria-hidden="true">↗</span>
-                        </span>
+                        </a>
                       )}
                     </div>
-                  </CardElement>
+                  </article>
                 </div>
               );
             })}
@@ -165,7 +175,7 @@ function ShowCarousel({
   );
 }
 
-export default function TodayShows({ locale, shows, view, emptyMessage }: Props) {
+export default function TodayShows({ locale, shows, view, emptyMessage, selectedDate, favoriteKeys, onToggleFavorite }: Props) {
   const t = translations[locale].shows;
   if (!shows.length) {
     return (
@@ -198,7 +208,7 @@ export default function TodayShows({ locale, shows, view, emptyMessage }: Props)
   return (
     <div className="w-full">
       {[...groups.entries()].map(([key, group]) => (
-        <ShowCarousel key={`${view}-${key}`} heading={group.heading} shows={group.shows} view={view} locale={locale} source={group.source} />
+        <ShowCarousel key={`${view}-${key}`} heading={group.heading} shows={group.shows} view={view} locale={locale} source={group.source} selectedDate={selectedDate} favoriteKeys={favoriteKeys} onToggleFavorite={onToggleFavorite} />
       ))}
     </div>
   );

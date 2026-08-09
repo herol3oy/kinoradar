@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { countLabel, translations, type Locale } from "../i18n/translations";
 import type { Show } from "../lib/normalize";
 import DateSelector from "./DateSelector";
@@ -9,6 +9,9 @@ import ShowFilters, {
 } from "./ShowFilters";
 import TodayShows from "./TodayShows";
 import type { Cinema } from "../data/cinemas";
+import { favoriteKey } from "../lib/favorites";
+import { useFavorites } from "../lib/useFavorites";
+import FavoritesPage from "./FavoritesPage";
 
 interface Props {
   locale: Locale;
@@ -16,6 +19,7 @@ interface Props {
   updatedAt: string | null;
   failedCinemas: string[];
   cinema?: Cinema;
+  favoritesPage?: boolean;
 }
 
 type ScheduleResponse = {
@@ -43,6 +47,7 @@ export default function App({
   updatedAt: initialUpdatedAt,
   failedCinemas: initialFailedCinemas,
   cinema: lockedCinema,
+  favoritesPage = false,
 }: Props) {
   const t = translations[locale];
   const today = new Date().toISOString().slice(0, 10);
@@ -60,18 +65,15 @@ export default function App({
   const [sort, setSort] = useState<SortMode>("cinema");
   const [view, setView] = useState<ViewMode>("cinema");
   const [activePreset, setActivePreset] = useState<QuickPreset | null>(null);
+  const [favoritesNotice, setFavoritesNotice] = useState(false);
+  const { favorites, toggle, remove, clear } = useFavorites();
+  const favoriteKeys = new Set(favorites.map((film) => favoriteKey(film.title, film.date, film.time, film.cinema)));
 
-  const availableShows = useMemo(
-    () => lockedCinema ? shows.filter((show) => show.source === lockedCinema.slug) : shows,
-    [lockedCinema, shows],
-  );
+  const availableShows = lockedCinema ? shows.filter((show) => show.source === lockedCinema.slug) : shows;
 
-  const cinemas = useMemo(
-    () => [...new Set(availableShows.map((show) => show.cinema))].sort((a, b) => a.localeCompare(b, locale)),
-    [availableShows, locale],
-  );
+  const cinemas = [...new Set(availableShows.map((show) => show.cinema))].sort((a, b) => a.localeCompare(b, locale));
 
-  const filteredShows = useMemo(() => {
+  const filteredShows = (() => {
     const normalizedQuery = normalizeSearch(query.trim());
     const from = fromTime ? toMinutes(fromTime) : null;
     const until = toTime ? toMinutes(toTime) : null;
@@ -106,12 +108,9 @@ export default function App({
       }
       return a.cinema.localeCompare(b.cinema, locale) || a.title.localeCompare(b.title, locale);
     });
-  }, [availableShows, cinema, fromTime, locale, query, sort, startingSoon, toTime]);
+  })();
 
-  const filmCount = useMemo(
-    () => new Set(filteredShows.map((show) => normalizeSearch(show.title.trim()))).size,
-    [filteredShows],
-  );
+  const filmCount = new Set(filteredShows.map((show) => normalizeSearch(show.title.trim()))).size;
   const cinemaCount = lockedCinema ? 1 : cinemas.length;
   const relevantFailures = lockedCinema
     ? failedCinemas.filter((name) => name === lockedCinema.label)
@@ -182,6 +181,10 @@ export default function App({
     ? Date.now() - new Date(updatedAt).getTime() > 6 * 60 * 60 * 1000
     : false;
 
+  if (favoritesPage) {
+    return <FavoritesPage locale={locale} favorites={favorites} onRemove={remove} onClear={clear} />;
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
       <section className="mb-8 grid gap-6 border-b border-white/8 pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
@@ -238,6 +241,7 @@ export default function App({
               )}
             </aside>
           )}
+          {favoritesNotice && <aside className="mb-4 border border-retro-yellow/30 bg-retro-yellow/5 px-4 py-3 text-xs text-retro-yellow" role="status">{t.favorites.limit}</aside>}
           <ShowFilters
             locale={locale}
             cinemas={cinemas}
@@ -275,6 +279,12 @@ export default function App({
                     ? t.shows.noMatches
                     : t.shows.noneAvailable
             }
+            selectedDate={selectedDate}
+            favoriteKeys={favoriteKeys}
+            onToggleFavorite={(show, time) => {
+              const result = toggle(show, selectedDate, time);
+              setFavoritesNotice(result === "full");
+            }}
           />
         </>
       )}

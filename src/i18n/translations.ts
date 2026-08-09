@@ -68,6 +68,28 @@ export interface Translations {
     cinemas: string;
     home: string;
   };
+  favorites: {
+    nav: string;
+    title: string;
+    eyebrow: string;
+    description: string;
+    add: string;
+    remove: string;
+    limit: string;
+    empty: string;
+    emptyDescription: string;
+    browse: string;
+    clear: string;
+    copyLink: string;
+    copied: string;
+    copyFailed: string;
+    sharedTitle: string;
+    sharedDescription: string;
+    loading: string;
+    unavailable: string;
+    invalid: string;
+    date: string;
+  };
 }
 
 export const translations: Record<Locale, Translations> = {
@@ -153,6 +175,28 @@ export const translations: Record<Locale, Translations> = {
       cinemas: "Kina",
       home: "Strona główna",
     },
+    favorites: {
+      nav: "Ulubione",
+      title: "Ulubione filmy",
+      eyebrow: "Twoja lista",
+      description: "Zapisane filmy i dostępne seanse w warszawskich kinach.",
+      add: "Dodaj do ulubionych",
+      remove: "Usuń z ulubionych",
+      limit: "Możesz zapisać maksymalnie 20 filmów.",
+      empty: "Brak ulubionych filmów",
+      emptyDescription: "Oznacz filmy gwiazdką, a pojawią się na tej liście.",
+      browse: "Przeglądaj repertuar",
+      clear: "Wyczyść listę",
+      copyLink: "Kopiuj link",
+      copied: "Link skopiowany",
+      copyFailed: "Nie udało się skopiować linku",
+      sharedTitle: "Udostępniona lista filmów",
+      sharedDescription: "Filmy wybrane do wspólnego seansu.",
+      loading: "Wczytywanie seansów",
+      unavailable: "Brak aktualnych seansów dla zapisanej daty.",
+      invalid: "Ten link do listy jest nieprawidłowy lub nieaktualny.",
+      date: "Data",
+    },
   },
   en: {
     meta: {
@@ -235,6 +279,28 @@ export const translations: Record<Locale, Translations> = {
       description: "Browse screening times and ticket links for the next 7 days.",
       cinemas: "Cinemas",
       home: "Home",
+    },
+    favorites: {
+      nav: "Favorites",
+      title: "Favorite films",
+      eyebrow: "Your list",
+      description: "Your saved films and available screenings in Warsaw cinemas.",
+      add: "Add to favorites",
+      remove: "Remove from favorites",
+      limit: "You can save up to 20 films.",
+      empty: "No favorite films yet",
+      emptyDescription: "Select the star on a film card and it will appear here.",
+      browse: "Browse schedules",
+      clear: "Clear list",
+      copyLink: "Copy link",
+      copied: "Link copied",
+      copyFailed: "Could not copy the link",
+      sharedTitle: "Shared film list",
+      sharedDescription: "Films selected for a cinema trip together.",
+      loading: "Loading screenings",
+      unavailable: "No current screenings for the saved date.",
+      invalid: "This shared-list link is invalid or out of date.",
+      date: "Date",
     },
   },
 };

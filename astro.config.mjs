@@ -21,9 +21,13 @@ export default defineConfig({
   site,
   output: 'server',
   integrations: [
-    react(),
+    react({
+      babel: {
+        plugins: ['babel-plugin-react-compiler'],
+      },
+    }),
     sitemap({
-      filter: (page) => page !== 'https://kinoradar.pl/',
+      filter: (page) => page !== 'https://kinoradar.pl/' && !new URL(page).pathname.includes('/favorites'),
       customPages: seoPages,
       serialize: (item) => {
         const url = new URL(item.url);

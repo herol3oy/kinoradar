@@ -8,24 +8,31 @@ import { getCachedSchedule } from "../server/kv";
 import { setCachedShows } from "../server/kv";
 import { getShowsReport } from "../server/scraper";
 import { cinemas, type Cinema } from "../data/cinemas";
+import FavoritesNavLink from "../components/FavoritesNavLink";
 
 interface Props {
   locale: Locale;
   cinema?: Cinema;
+  favoritesPage?: boolean;
 }
 
-const { locale, cinema } = Astro.props;
+const { locale, cinema, favoritesPage = false } = Astro.props;
 const t = translations[locale];
 const otherLocale: Locale = locale === "pl" ? "en" : "pl";
-const pagePath = cinema ? `/${locale}/kino/${cinema.slug}/` : `/${locale}/`;
-const otherPath = cinema ? `/${otherLocale}/kino/${cinema.slug}/` : `/${otherLocale}/`;
+const pagePath = favoritesPage ? `/${locale}/favorites/` : cinema ? `/${locale}/kino/${cinema.slug}/` : `/${locale}/`;
+const sharedQuery = favoritesPage ? Astro.url.search : "";
+const otherPath = favoritesPage ? `/${otherLocale}/favorites/${sharedQuery}` : cinema ? `/${otherLocale}/kino/${cinema.slug}/` : `/${otherLocale}/`;
 const canonicalUrl = new URL(pagePath, Astro.site);
-const polishUrl = new URL(cinema ? `/pl/kino/${cinema.slug}/` : "/pl/", Astro.site);
-const englishUrl = new URL(cinema ? `/en/kino/${cinema.slug}/` : "/en/", Astro.site);
-const title = cinema
+const polishUrl = new URL(favoritesPage ? "/pl/favorites/" : cinema ? `/pl/kino/${cinema.slug}/` : "/pl/", Astro.site);
+const englishUrl = new URL(favoritesPage ? "/en/favorites/" : cinema ? `/en/kino/${cinema.slug}/` : "/en/", Astro.site);
+const title = favoritesPage
+  ? `${t.favorites.title} | KinoRadar`
+  : cinema
   ? `${cinema.label} — ${t.cinemaPage.schedule} | KinoRadar`
   : t.meta.title;
-const description = cinema
+const description = favoritesPage
+  ? t.favorites.description
+  : cinema
   ? `${cinema.label}: ${t.cinemaPage.description}`
   : t.meta.description;
 const socialImage = new URL("/og-image.png", Astro.site);
@@ -58,10 +65,15 @@ const jsonLd = cinema
 const serializedJsonLd = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
 const today = new Date().toISOString().slice(0, 10);
-let schedule = await getCachedSchedule(env.SHOWTIMES, today);
-if (!schedule) {
-  const result = await getShowsReport(today);
-  schedule = await setCachedShows(env.SHOWTIMES, today, result.shows, result.failedCinemas);
+let schedule = { shows: [], updatedAt: null, failedCinemas: [] } as Awaited<ReturnType<typeof setCachedShows>>;
+if (!favoritesPage) {
+  const cachedSchedule = await getCachedSchedule(env.SHOWTIMES, today);
+  if (cachedSchedule) {
+    schedule = cachedSchedule;
+  } else {
+    const result = await getShowsReport(today);
+    schedule = await setCachedShows(env.SHOWTIMES, today, result.shows, result.failedCinemas);
+  }
 }
 ---
 
@@ -74,6 +86,7 @@ if (!schedule) {
     <meta name="generator" content={Astro.generator} />
     <meta name="theme-color" content="#07090d" />
     <meta name="description" content={description} />
+    {favoritesPage && <meta name="robots" content="noindex,follow" />}
     <link rel="canonical" href={canonicalUrl} />
     <link rel="alternate" hreflang="pl" href={polishUrl} />
     <link rel="alternate" hreflang="en" href={englishUrl} />
@@ -108,28 +121,30 @@ if (!schedule) {
           </span>
         </a>
         <div class="flex items-center gap-4 sm:gap-6">
+          <FavoritesNavLink locale={locale} client:load />
           <span class="hidden items-center gap-2 text-[10px] tracking-[0.22em] text-retro-green uppercase md:flex">
             <span class="size-1.5 animate-pulse rounded-full bg-retro-green shadow-[0_0_10px_var(--color-retro-green)]"></span>
             {t.header.online}
           </span>
           <nav aria-label={t.header.language} class="flex border border-white/10 text-[10px] font-bold tracking-widest uppercase">
-            <a href={`/${locale}/`} aria-current="page" class="bg-retro-cyan px-2.5 py-2 text-black">{locale}</a>
+            <a href={`${pagePath}${sharedQuery}`} aria-current="page" class="bg-retro-cyan px-2.5 py-2 text-black">{locale}</a>
             <a href={otherPath} hreflang={otherLocale} lang={otherLocale} class="px-2.5 py-2 text-gray-500 transition-colors hover:text-retro-cyan">{otherLocale}</a>
           </nav>
         </div>
       </div>
     </header>
     <main class="pb-16">
-      {cinema && (
+      {(cinema || favoritesPage) && (
         <nav aria-label="Breadcrumb" class="mx-auto max-w-7xl px-4 pt-6 text-[10px] tracking-widest text-gray-600 uppercase sm:px-6 lg:px-8">
           <a href={`/${locale}/`} class="transition-colors hover:text-retro-cyan">{t.cinemaPage.home}</a>
           <span aria-hidden="true" class="px-2">/</span>
-          <span aria-current="page">{cinema.label}</span>
+          <span aria-current="page">{favoritesPage ? t.favorites.nav : cinema?.label}</span>
         </nav>
       )}
       <App
         locale={locale}
         cinema={cinema}
+        favoritesPage={favoritesPage}
         shows={schedule.shows}
         updatedAt={schedule.updatedAt}
         failedCinemas={schedule.failedCinemas}
