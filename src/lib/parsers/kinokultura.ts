@@ -1,9 +1,10 @@
 import * as cheerio from 'cheerio';
+import { fetchWithTimeout } from '../../server/fetch';
 
 export async function parseKinokultura(date?: string | Date) {
   const day = typeof date === 'string' ? date : date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
   const url = `https://rezerwacja.kinokultura.pl/MSI/mvc/pl?sort=Name&date=${day}&datestart=0`;
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`Kino Kultura returned ${res.status}`);
   const $ = cheerio.load(await res.text());
   const shows: Array<any> = [];

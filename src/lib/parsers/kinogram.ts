@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from '../../server/fetch';
+
 const API_URL = 'https://bilety.kinogram.pl/api/graphql';
 
 const QUERY = `query getScreeningList($query: ScreeningListInput!) {
@@ -60,7 +62,7 @@ export async function parseKinogram(date?: string | Date) {
   const day = typeof date === 'string' ? date : date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
   const dateAt = new Date(day + 'T18:45:00.000Z').toISOString();
 
-  const res = await fetch(API_URL, {
+  const res = await fetchWithTimeout(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

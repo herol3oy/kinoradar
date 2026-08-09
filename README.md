@@ -1,6 +1,6 @@
 # KinoRadar
 
-KinoRadar collects film schedules from independent cinemas in Warsaw and presents them in one place. Pick any of the next seven days, browse films grouped by cinema, see available screening times, and follow a film card to the cinema's ticket page.
+KinoRadar collects film schedules from independent cinemas in Warsaw and presents them in one place in Polish and English. Pick any of the next seven days, browse films grouped by cinema, see available screening times, and follow a film card to the cinema's ticket page.
 
 The application currently aggregates:
 
@@ -72,7 +72,7 @@ KinoRadar uses Astro's server output with the Cloudflare adapter. Astro owns rou
 
 | Area | Responsibility | Main files |
 | --- | --- | --- |
-| Page and SSR | Loads today's cached data (or scrapes on a miss) and renders the application shell | `src/pages/index.astro` |
+| Page and SSR | Renders localized home and cinema pages from today's cached data | `src/layouts/HomePage.astro`, `src/pages/` |
 | Client UI | Selects a date, fetches new data, groups shows by cinema, and renders carousels | `src/components/` |
 | JSON API | Validates the requested date and implements cache-first retrieval | `src/pages/api/today.json.ts` |
 | Scraping | Runs cinema parsers concurrently, tolerates individual failures, normalizes results, and removes duplicates | `src/server/scraper.ts` |
@@ -104,12 +104,16 @@ Cache entries use the key format `SHOWTIMES:YYYY-MM-DD`. Deduplication uses the 
 ├── public/                    # Favicons and static assets
 ├── src/
 │   ├── components/            # Hydrated React UI
+│   ├── data/cinemas.ts        # Shared cinema names and stable slugs
+│   ├── i18n/                  # Polish and English translations
 │   ├── lib/
 │   │   ├── parsers/           # One adapter per cinema
 │   │   └── normalize.ts       # Shared schedule model
 │   ├── pages/
 │   │   ├── api/today.json.ts  # Date-based schedule endpoint
-│   │   └── index.astro        # Server-rendered home page
+│   │   ├── [locale]/kino/     # Localized cinema landing pages
+│   │   ├── en/ and pl/        # Localized home pages
+│   │   └── index.astro        # Permanent redirect to Polish
 │   ├── server/
 │   │   ├── kv.ts              # KV cache access
 │   │   └── scraper.ts         # Parser orchestration
@@ -170,11 +174,25 @@ This endpoint is public. `force=1` should therefore be used carefully because ev
 ## Adding a cinema
 
 1. Add a parser in `src/lib/parsers/`. It should export an async parse function and a `siteName`, and return objects containing at least a title and screening times. Links and posters are optional.
-2. Register the parser in `CINEMA_PARSERS` in `src/server/scraper.ts` with its display name and source slug.
-3. Add the cinema to the descriptive copy in `src/pages/index.astro`.
+2. Add its display name and stable source slug to `src/data/cinemas.ts`.
+3. Register the parser in `CINEMA_PARSERS` in `src/server/scraper.ts` using that registry entry.
 4. Build the project and exercise the API for a date that has a published schedule.
 
-Parsers should throw on unsuccessful upstream responses. The orchestrator uses `Promise.allSettled`, logs that failure, and still returns results from the other cinemas.
+Parsers should throw on unsuccessful upstream responses. Shared upstream requests time out after eight seconds. The orchestrator uses `Promise.allSettled`, logs failures, and still returns results from the other cinemas.
+
+## Search engine deployment checklist
+
+After deploying changes to routes or metadata:
+
+1. Confirm `/` permanently redirects to `/pl/`.
+2. Confirm `/robots.txt`, `/sitemap-index.xml`, both localized homepages, and representative cinema pages return successfully.
+3. Validate canonical and reciprocal `hreflang` links in the rendered HTML.
+4. Validate the JSON-LD with Google's Rich Results Test.
+5. Verify `kinoradar.pl` in Google Search Console using a DNS record.
+6. Submit `https://kinoradar.pl/sitemap-index.xml` and inspect `/pl/`, `/en/`, and representative cinema URLs.
+7. Monitor indexing, queries, click-through rate, and Core Web Vitals after releases.
+
+The sitemap contains the two localized homepages and 12 cinema pages per language. Cinema pages intentionally omit `LocalBusiness` markup until verified addresses and venue details are available.
 
 ## Deployment
 

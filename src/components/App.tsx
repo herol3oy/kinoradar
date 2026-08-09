@@ -8,12 +8,14 @@ import ShowFilters, {
   type ViewMode,
 } from "./ShowFilters";
 import TodayShows from "./TodayShows";
+import type { Cinema } from "../data/cinemas";
 
 interface Props {
   locale: Locale;
   shows: Show[];
   updatedAt: string | null;
   failedCinemas: string[];
+  cinema?: Cinema;
 }
 
 type ScheduleResponse = {
@@ -40,6 +42,7 @@ export default function App({
   shows: initialShows,
   updatedAt: initialUpdatedAt,
   failedCinemas: initialFailedCinemas,
+  cinema: lockedCinema,
 }: Props) {
   const t = translations[locale];
   const today = new Date().toISOString().slice(0, 10);
@@ -58,9 +61,14 @@ export default function App({
   const [view, setView] = useState<ViewMode>("cinema");
   const [activePreset, setActivePreset] = useState<QuickPreset | null>(null);
 
+  const availableShows = useMemo(
+    () => lockedCinema ? shows.filter((show) => show.source === lockedCinema.slug) : shows,
+    [lockedCinema, shows],
+  );
+
   const cinemas = useMemo(
-    () => [...new Set(shows.map((show) => show.cinema))].sort((a, b) => a.localeCompare(b, locale)),
-    [locale, shows],
+    () => [...new Set(availableShows.map((show) => show.cinema))].sort((a, b) => a.localeCompare(b, locale)),
+    [availableShows, locale],
   );
 
   const filteredShows = useMemo(() => {
@@ -72,7 +80,7 @@ export default function App({
     const soonLimit = nowMinutes + 120;
     const hasTimeFilter = from !== null || until !== null || startingSoon;
 
-    const filtered = shows.flatMap((show) => {
+    const filtered = availableShows.flatMap((show) => {
       if (normalizedQuery && !normalizeSearch(show.title).includes(normalizedQuery)) return [];
       if (cinema && show.cinema !== cinema) return [];
       if (!hasTimeFilter) return [show];
@@ -98,12 +106,16 @@ export default function App({
       }
       return a.cinema.localeCompare(b.cinema, locale) || a.title.localeCompare(b.title, locale);
     });
-  }, [cinema, fromTime, locale, query, shows, sort, startingSoon, toTime]);
+  }, [availableShows, cinema, fromTime, locale, query, sort, startingSoon, toTime]);
 
   const filmCount = useMemo(
     () => new Set(filteredShows.map((show) => normalizeSearch(show.title.trim()))).size,
     [filteredShows],
   );
+  const cinemaCount = lockedCinema ? 1 : cinemas.length;
+  const relevantFailures = lockedCinema
+    ? failedCinemas.filter((name) => name === lockedCinema.label)
+    : failedCinemas;
 
   const resetFilters = () => {
     setQuery("");
@@ -174,12 +186,12 @@ export default function App({
     <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
       <section className="mb-8 grid gap-6 border-b border-white/8 pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
-          <p className="mb-3 text-[10px] tracking-[0.3em] text-retro-magenta uppercase">{t.hero.eyebrow}</p>
+          <p className="mb-3 text-[10px] tracking-[0.3em] text-retro-magenta uppercase">{lockedCinema ? t.cinemaPage.eyebrow : t.hero.eyebrow}</p>
           <h1 className="max-w-3xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
-            {t.hero.title} <span className="text-retro-cyan [text-shadow:0_0_24px_rgba(0,255,255,0.3)]">{t.hero.accent}</span>
+            {lockedCinema ? lockedCinema.label : t.hero.title} <span className="text-retro-cyan [text-shadow:0_0_24px_rgba(0,255,255,0.3)]">{lockedCinema ? t.cinemaPage.schedule : t.hero.accent}</span>
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-gray-500">
-            {t.hero.description}
+            {lockedCinema ? t.cinemaPage.description : t.hero.description}
           </p>
         </div>
         <div className="flex gap-6 text-right">
@@ -188,8 +200,8 @@ export default function App({
             <span className="text-[9px] tracking-[0.2em] text-gray-600 uppercase">{countLabel(locale, filmCount, t.hero.films)}</span>
           </div>
           <div>
-            <span className="block text-2xl font-bold text-white">{cinemas.length}</span>
-            <span className="text-[9px] tracking-[0.2em] text-gray-600 uppercase">{countLabel(locale, cinemas.length, t.hero.cinemas)}</span>
+            <span className="block text-2xl font-bold text-white">{cinemaCount}</span>
+            <span className="text-[9px] tracking-[0.2em] text-gray-600 uppercase">{countLabel(locale, cinemaCount, t.hero.cinemas)}</span>
           </div>
         </div>
       </section>
@@ -210,13 +222,13 @@ export default function App({
         </div>
       ) : (
         <>
-          {(loadError || failedCinemas.length > 0 || isStale) && (
+          {(loadError || relevantFailures.length > 0 || isStale) && (
             <aside className="mb-4 border border-retro-yellow/30 bg-retro-yellow/5 px-4 py-3 text-xs leading-5 tracking-wider text-retro-yellow uppercase" role="status">
               {loadError ? (
                 <span>{t.status.loadFailed}</span>
-              ) : failedCinemas.length > 0 ? (
+              ) : relevantFailures.length > 0 ? (
                 <span>
-                  {shows.length === 0 ? t.status.updateFailed : t.status.partialResults} — {t.status.couldNotUpdate}: {failedCinemas.join(", ")}.
+                  {availableShows.length === 0 ? t.status.updateFailed : t.status.partialResults} — {t.status.couldNotUpdate}: {relevantFailures.join(", ")}.
                   {updatedAt && ` ${t.status.lastAttempt}: ${new Date(updatedAt).toLocaleString(locale)}.`}
                 </span>
               ) : (
@@ -239,6 +251,7 @@ export default function App({
             activePreset={activePreset}
             startingSoonAvailable={selectedDate === today}
             resultCount={filmCount}
+            hideCinema={Boolean(lockedCinema)}
             onQueryChange={setQuery}
             onCinemaChange={setCinema}
             onFromTimeChange={(value) => { setFromTime(value); setActivePreset(null); }}
@@ -256,7 +269,7 @@ export default function App({
             emptyMessage={
               loadError
                 ? t.shows.loadFailed
-                : shows.length === 0
+                : availableShows.length === 0
                   ? t.shows.nonePublished
                   : hasFilters
                     ? t.shows.noMatches

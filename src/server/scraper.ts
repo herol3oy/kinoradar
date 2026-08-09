@@ -11,6 +11,7 @@ import { parseKinocytadela, siteName as cytadelaName } from '../lib/parsers/kino
 import { parseIluzjon, siteName as iluzjonName } from '../lib/parsers/iluzjon';
 import { parseKinogram, siteName as kinogramName } from '../lib/parsers/kinogram';
 import { normalizeMany, type Show } from '../lib/normalize';
+import { cinemas } from '../data/cinemas';
 
 export type ScrapeResult = {
   shows: Show[];
@@ -18,18 +19,18 @@ export type ScrapeResult = {
 };
 
 const CINEMA_PARSERS = [
-  { parse: parseKinoteka, name: kinotekaName, slug: 'kinoteka', label: 'Kinoteka' },
-  { parse: parseKinomuranow, name: muranowName, slug: 'kinomuranow', label: 'Kino Muranów' },
-  { parse: parseUJazdowski, name: ujName, slug: 'u-jazdowski', label: 'U-Jazdowski' },
-  { parse: parseKinowisla, name: wislaName, slug: 'kinowisla', label: 'Kino Wisła' },
-  { parse: parseKinoatlantic, name: atlanticName, slug: 'kinoatlantic', label: 'Kino Atlantic' },
-  { parse: parseKinoluna, name: kinolunaName, slug: 'kinoluna', label: 'Kinoluna' },
-  { parse: parseKinokultura, name: kinokulturaName, slug: 'kinokultura', label: 'Kino Kultura' },
-  { parse: parseKinoamondo, name: amondoName, slug: 'kinoamondo', label: 'Kino Amondo' },
-  { parse: parseKinoelektronik, name: elektronikName, slug: 'kinoelektronik', label: 'Kino Elektronik' },
-  { parse: parseKinocytadela, name: cytadelaName, slug: 'kinocytadela', label: 'Kino Cytadela' },
-  { parse: parseIluzjon, name: iluzjonName, slug: 'iluzjon', label: 'Iluzjon' },
-  { parse: parseKinogram, name: kinogramName, slug: 'kinogram', label: 'Kinogram' },
+  { ...cinemas[0], parse: parseKinoteka, name: kinotekaName },
+  { ...cinemas[1], parse: parseKinomuranow, name: muranowName },
+  { ...cinemas[2], parse: parseUJazdowski, name: ujName },
+  { ...cinemas[3], parse: parseKinowisla, name: wislaName },
+  { ...cinemas[4], parse: parseKinoatlantic, name: atlanticName },
+  { ...cinemas[5], parse: parseKinoluna, name: kinolunaName },
+  { ...cinemas[6], parse: parseKinokultura, name: kinokulturaName },
+  { ...cinemas[7], parse: parseKinoamondo, name: amondoName },
+  { ...cinemas[8], parse: parseKinoelektronik, name: elektronikName },
+  { ...cinemas[9], parse: parseKinocytadela, name: cytadelaName },
+  { ...cinemas[10], parse: parseIluzjon, name: iluzjonName },
+  { ...cinemas[11], parse: parseKinogram, name: kinogramName },
 ];
 
 function normalizeDate(date?: string): string {

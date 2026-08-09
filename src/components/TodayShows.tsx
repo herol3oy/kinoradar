@@ -25,11 +25,13 @@ function ShowCarousel({
   shows,
   view,
   locale,
+  source,
 }: {
   heading: string;
   shows: Show[];
   view: ViewMode;
   locale: Locale;
+  source?: string;
 }) {
   const t = translations[locale];
   const [emblaRef, emblaApi] = useEmblaCarousel({ align: "start" });
@@ -65,7 +67,11 @@ function ShowCarousel({
             {view === "film" ? t.shows.filmSignal : t.shows.cinemaChannel}
           </span>
           <h2 className="text-xl font-bold tracking-wide text-white sm:text-2xl">
-            {heading}
+            {view === "cinema" && source ? (
+              <a className="transition-colors hover:text-retro-cyan" href={`/${locale}/kino/${source}/`}>
+                {heading}
+              </a>
+            ) : heading}
           </h2>
         </div>
         <span className="shrink-0 text-[10px] tracking-widest text-gray-600 uppercase">
@@ -173,7 +179,7 @@ export default function TodayShows({ locale, shows, view, emptyMessage }: Props)
     );
   }
 
-  const groups = new Map<string, { heading: string; shows: Show[] }>();
+  const groups = new Map<string, { heading: string; shows: Show[]; source?: string }>();
 
   shows.forEach((show) => {
     const key = view === "film" ? normalizeTitle(show.title) : show.cinema;
@@ -184,6 +190,7 @@ export default function TodayShows({ locale, shows, view, emptyMessage }: Props)
       groups.set(key, {
         heading: view === "film" ? show.title : show.cinema,
         shows: [show],
+        source: show.source,
       });
     }
   });
@@ -191,7 +198,7 @@ export default function TodayShows({ locale, shows, view, emptyMessage }: Props)
   return (
     <div className="w-full">
       {[...groups.entries()].map(([key, group]) => (
-        <ShowCarousel key={`${view}-${key}`} heading={group.heading} shows={group.shows} view={view} locale={locale} />
+        <ShowCarousel key={`${view}-${key}`} heading={group.heading} shows={group.shows} view={view} locale={locale} source={group.source} />
       ))}
     </div>
   );

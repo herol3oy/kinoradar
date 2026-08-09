@@ -7,20 +7,31 @@ import tailwindcss from "@tailwindcss/vite";
 import cloudflare from '@astrojs/cloudflare';
 
 import sitemap from '@astrojs/sitemap';
+import { cinemas } from './src/data/cinemas.ts';
+
+const site = 'https://kinoradar.pl';
+const locales = ['pl', 'en'];
+const seoPages = locales.flatMap((locale) => [
+  `${site}/${locale}/`,
+  ...cinemas.map((cinema) => `${site}/${locale}/kino/${cinema.slug}/`),
+]);
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://kinoradar.pl',
+  site,
   output: 'server',
   integrations: [
     react(),
     sitemap({
       filter: (page) => page !== 'https://kinoradar.pl/',
+      customPages: seoPages,
       serialize: (item) => {
+        const url = new URL(item.url);
+        const suffix = url.pathname.replace(/^\/(pl|en)/, '');
         item.links = [
-          { lang: 'pl', url: 'https://kinoradar.pl/pl/' },
-          { lang: 'en', url: 'https://kinoradar.pl/en/' },
-          { lang: 'x-default', url: 'https://kinoradar.pl/pl/' },
+          { lang: 'pl', url: `${site}/pl${suffix}` },
+          { lang: 'en', url: `${site}/en${suffix}` },
+          { lang: 'x-default', url: `${site}/pl${suffix}` },
         ];
         return item;
       },
@@ -32,7 +43,7 @@ export default defineConfig({
     defaultLocale: 'pl',
     routing: {
       prefixDefaultLocale: true,
-      redirectToDefaultLocale: true,
+      redirectToDefaultLocale: false,
     },
   },
 

@@ -15,6 +15,7 @@ interface Props {
   activePreset: QuickPreset | null;
   startingSoonAvailable: boolean;
   resultCount: number;
+  hideCinema?: boolean;
   onQueryChange: (value: string) => void;
   onCinemaChange: (value: string) => void;
   onFromTimeChange: (value: string) => void;
@@ -42,6 +43,7 @@ export default function ShowFilters({
   activePreset,
   startingSoonAvailable,
   resultCount,
+  hideCinema = false,
   onQueryChange,
   onCinemaChange,
   onFromTimeChange,
@@ -103,7 +105,7 @@ export default function ShowFilters({
           />
         </label>
 
-        <label className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-500">
+        {!hideCinema && <label className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-500">
           {t.cinema}
           <select
             value={cinema}
@@ -117,7 +119,7 @@ export default function ShowFilters({
               </option>
             ))}
           </select>
-        </label>
+        </label>}
 
         <label className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-500">
           {t.from}

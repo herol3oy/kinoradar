@@ -1,11 +1,12 @@
 import * as cheerio from 'cheerio';
+import { fetchWithTimeout } from '../../server/fetch';
 
 export async function parseUJazdowski(date?: string | Date) {
   const day = typeof date === 'string' ? date : date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
   const [y, m, d] = day.split('-').map(Number);
   const ut = Math.floor(Date.UTC(y, m - 1, d, 0, 0, 0) / 1000) - 7200;
   const url = `https://u-jazdowski.pl/kino/repertuar?ut=${ut}`;
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`U-Jazdowski returned ${res.status}`);
   const $ = cheerio.load(await res.text());
   const shows: Array<any> = [];

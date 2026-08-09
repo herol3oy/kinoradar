@@ -1,7 +1,8 @@
 import * as cheerio from 'cheerio';
+import { fetchWithTimeout } from '../../server/fetch';
 
 export async function parseKinomuranow(date?: string | Date, url = 'https://kinomuranow.pl/repertuar') {
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`Muranów returned ${res.status}`);
   const $ = cheerio.load(await res.text());
   const shows: Array<any> = [];

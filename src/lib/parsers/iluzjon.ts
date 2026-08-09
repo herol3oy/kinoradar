@@ -1,10 +1,11 @@
 import * as cheerio from 'cheerio';
+import { fetchWithTimeout } from '../../server/fetch';
 
 export async function parseIluzjon(date?: string | Date) {
   const day = typeof date === 'string' ? date : date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
   const timestamp = Math.floor(new Date(day + 'T00:00:00').getTime() / 1000);
   const url = `https://www.iluzjon.fn.org.pl/repertuar/ajax/${timestamp}`;
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`Iluzjon returned ${res.status}`);
   const $ = cheerio.load(await res.text());
   const groups: Record<string, any> = {};

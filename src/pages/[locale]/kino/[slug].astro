@@ -1,0 +1,15 @@
+---
+import HomePage from "../../../layouts/HomePage.astro";
+import { getCinema } from "../../../data/cinemas";
+import { locales, type Locale } from "../../../i18n/translations";
+
+const localeParam = Astro.params.locale;
+const locale = locales.includes(localeParam as Locale) ? localeParam as Locale : undefined;
+const cinema = getCinema(Astro.params.slug);
+
+if (!locale || !cinema) {
+  return new Response("Not found", { status: 404 });
+}
+---
+
+<HomePage locale={locale} cinema={cinema} />

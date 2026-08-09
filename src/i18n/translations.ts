@@ -61,6 +61,13 @@ export interface Translations {
     noneAvailable: string;
   };
   footer: string;
+  cinemaPage: {
+    eyebrow: string;
+    schedule: string;
+    description: string;
+    cinemas: string;
+    home: string;
+  };
 }
 
 export const translations: Record<Locale, Translations> = {
@@ -139,6 +146,13 @@ export const translations: Record<Locale, Translations> = {
       noneAvailable: "Brak dostępnych seansów dla tej daty.",
     },
     footer: "Repertuary należą do poszczególnych kin · Zawsze potwierdź szczegóły przed zakupem",
+    cinemaPage: {
+      eyebrow: "Kino w Warszawie",
+      schedule: "repertuar",
+      description: "Sprawdź repertuar, godziny seansów i bilety na najbliższe 7 dni.",
+      cinemas: "Kina",
+      home: "Strona główna",
+    },
   },
   en: {
     meta: {
@@ -215,6 +229,13 @@ export const translations: Record<Locale, Translations> = {
       noneAvailable: "No screenings are available for this date.",
     },
     footer: "Schedules belong to their respective cinemas · Always confirm details before booking",
+    cinemaPage: {
+      eyebrow: "Warsaw cinema",
+      schedule: "schedule",
+      description: "Browse screening times and ticket links for the next 7 days.",
+      cinemas: "Cinemas",
+      home: "Home",
+    },
   },
 };
 
