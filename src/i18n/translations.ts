@@ -43,6 +43,8 @@ export interface Translations {
     startingSoon: string;
     startingSoonHint: string;
     todayOnly: string;
+    englishFriendly: string;
+    englishFriendlyHint: string;
     reset: string;
     inSignal: string;
   };
@@ -59,6 +61,12 @@ export interface Translations {
     nonePublished: string;
     noMatches: string;
     noneAvailable: string;
+  };
+  screeningLanguage: {
+    audio: string;
+    subtitles: string;
+    subtitled: string;
+    dubbed: string;
   };
   footer: string;
   cinemaPage: {
@@ -160,6 +168,8 @@ export const translations: Record<Locale, Translations> = {
       startingSoon: "START W CIĄGU 2H",
       startingSoonHint: "Pokaż tylko seanse rozpoczynające się w ciągu najbliższych dwóch godzin",
       todayOnly: "Dostępne tylko dla dzisiejszej daty",
+      englishFriendly: "PO ANGIELSKU",
+      englishFriendlyHint: "Pokaż seanse ze zweryfikowanym angielskim dźwiękiem lub napisami",
       reset: "[ WYCZYŚĆ ]",
       inSignal: "w sygnale",
     },
@@ -176,6 +186,12 @@ export const translations: Record<Locale, Translations> = {
       nonePublished: "Dla tej daty nie opublikowano jeszcze repertuaru.",
       noMatches: "Żaden seans nie pasuje do wybranych filtrów.",
       noneAvailable: "Brak dostępnych seansów dla tej daty.",
+    },
+    screeningLanguage: {
+      audio: "dźwięk",
+      subtitles: "napisy",
+      subtitled: "napisy",
+      dubbed: "dubbing",
     },
     footer: "Repertuary należą do poszczególnych kin · Zawsze potwierdź szczegóły przed zakupem",
     cinemaPage: {
@@ -275,6 +291,8 @@ export const translations: Record<Locale, Translations> = {
       startingSoon: "STARTING IN 2H",
       startingSoonHint: "Only show screenings starting in the next two hours",
       todayOnly: "Available for today only",
+      englishFriendly: "ENGLISH-FRIENDLY",
+      englishFriendlyHint: "Show screenings with verified English audio or subtitles",
       reset: "[ RESET ]",
       inSignal: "in signal",
     },
@@ -291,6 +309,12 @@ export const translations: Record<Locale, Translations> = {
       nonePublished: "No screenings have been published for this date.",
       noMatches: "No screenings match the selected filters.",
       noneAvailable: "No screenings are available for this date.",
+    },
+    screeningLanguage: {
+      audio: "audio",
+      subtitles: "subtitles",
+      subtitled: "subtitled",
+      dubbed: "dubbed",
     },
     footer: "Schedules belong to their respective cinemas · Always confirm details before booking",
     cinemaPage: {

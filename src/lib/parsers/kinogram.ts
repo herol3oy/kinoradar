@@ -1,4 +1,5 @@
 import { fetchWithTimeout } from '../../server/fetch';
+import { parseLanguageCodes } from '../screening-language';
 
 const API_URL = 'https://bilety.kinogram.pl/api/graphql';
 
@@ -96,9 +97,19 @@ export async function parseKinogram(date?: string | Date) {
     const link = movieId ? `https://bilety.kinogram.pl/screening/movie/${movieId}` : undefined;
 
     if (!groups[title]) {
-      groups[title] = { title, times: [], poster, link };
+      groups[title] = { title, screenings: [], poster, link };
     }
-    if (time) groups[title].times.push(time);
+    if (time) {
+      const subtitleLanguages = parseLanguageCodes(s.subtitles);
+      groups[title].screenings.push({
+        time,
+        link,
+        audioLanguage: s.language || undefined,
+        subtitleLanguages,
+        subtitled: subtitleLanguages.length > 0,
+        dubbed: s.speakingType === 'DUB' ? true : s.speakingType === 'ORG' ? false : undefined,
+      });
+    }
   }
 
   return Object.values(groups);

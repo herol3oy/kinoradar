@@ -10,6 +10,7 @@ interface Props {
   fromTime: string;
   toTime: string;
   startingSoon: boolean;
+  englishFriendly: boolean;
   sort: SortMode;
   view: ViewMode;
   activePreset: QuickPreset | null;
@@ -21,6 +22,7 @@ interface Props {
   onFromTimeChange: (value: string) => void;
   onToTimeChange: (value: string) => void;
   onStartingSoonChange: (value: boolean) => void;
+  onEnglishFriendlyChange: (value: boolean) => void;
   onSortChange: (value: SortMode) => void;
   onViewChange: (value: ViewMode) => void;
   onPresetChange: (value: QuickPreset) => void;
@@ -38,6 +40,7 @@ export default function ShowFilters({
   fromTime,
   toTime,
   startingSoon,
+  englishFriendly,
   sort,
   view,
   activePreset,
@@ -49,6 +52,7 @@ export default function ShowFilters({
   onFromTimeChange,
   onToTimeChange,
   onStartingSoonChange,
+  onEnglishFriendlyChange,
   onSortChange,
   onViewChange,
   onPresetChange,
@@ -56,7 +60,7 @@ export default function ShowFilters({
 }: Props) {
   const t = translations[locale].filters;
   const filmForms = translations[locale].hero.films;
-  const hasFilters = Boolean(query || cinema || fromTime || toTime || startingSoon);
+  const hasFilters = Boolean(query || cinema || fromTime || toTime || startingSoon || englishFriendly);
 
   return (
     <section
@@ -193,6 +197,19 @@ export default function ShowFilters({
             className="accent-[var(--color-retro-yellow)]"
           />
           {t.startingSoon}
+        </label>
+
+        <label
+          className="flex cursor-pointer items-center gap-2 border border-white/10 px-3 py-2.5 text-[10px] font-bold tracking-widest text-retro-cyan uppercase hover:border-retro-cyan/50"
+          title={t.englishFriendlyHint}
+        >
+          <input
+            type="checkbox"
+            checked={englishFriendly}
+            onChange={(event) => onEnglishFriendlyChange(event.target.checked)}
+            className="accent-[var(--color-retro-cyan)]"
+          />
+          {t.englishFriendly}
         </label>
 
         <button

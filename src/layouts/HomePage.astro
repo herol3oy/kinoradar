@@ -4,7 +4,7 @@ import { env } from "cloudflare:workers";
 import App from "../components/App";
 import type { Locale } from "../i18n/translations";
 import { translations } from "../i18n/translations";
-import { getCachedSchedule } from "../server/kv";
+import { getCachedSchedule, SCHEDULE_SCHEMA_VERSION } from "../server/kv";
 import { setCachedShows } from "../server/kv";
 import { getShowsReport } from "../server/scraper";
 import { cinemas, type Cinema } from "../data/cinemas";
@@ -81,7 +81,7 @@ const jsonLd = film
 const serializedJsonLd = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
 const today = warsawDate();
-let schedule = { shows: [], updatedAt: null, failedCinemas: [] } as Awaited<ReturnType<typeof setCachedShows>>;
+let schedule = { schemaVersion: SCHEDULE_SCHEMA_VERSION, shows: [], updatedAt: null, failedCinemas: [] } as Awaited<ReturnType<typeof setCachedShows>>;
 if (!favoritesPage && !film) {
   const cachedSchedule = await getCachedSchedule(env.SHOWTIMES, today);
   if (cachedSchedule) {

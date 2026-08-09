@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { translations, type Locale } from "../i18n/translations";
-import { decodeSharedFavorites, encodeSharedFavorites, favoriteKey, type FavoriteFilm } from "../lib/favorites";
+import { decodeSharedFavorites, encodeSharedFavorites, favoriteFilmKey, favoriteKey, type FavoriteFilm } from "../lib/favorites";
 import type { Show } from "../lib/normalize";
+import type { Screening } from "../lib/screening-language";
 import { filmSlug } from "../lib/film";
+import ScreeningBadges from "./ScreeningBadges";
 
 type Props = {
   locale: Locale;
@@ -17,7 +19,7 @@ export default function FavoritesPage({ locale, favorites, onRemove, onClear }: 
   const t = translations[locale];
   const [sharedFilms, setSharedFilms] = useState<FavoriteFilm[] | null>(null);
   const [invalidLink, setInvalidLink] = useState(false);
-  const [showsByFavorite, setShowsByFavorite] = useState<Map<string, Show>>(new Map());
+  const [showsByFavorite, setShowsByFavorite] = useState<Map<string, { show: Show; screening: Screening }>>(new Map());
   const [loading, setLoading] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
 
@@ -32,6 +34,7 @@ export default function FavoritesPage({ locale, favorites, onRemove, onClear }: 
   const isShared = sharedFilms !== null;
   const films = isShared ? sharedFilms : favorites;
   const dates = [...new Set(films.map((film) => film.date))];
+  const dateKey = dates.join(",");
 
   useEffect(() => {
     if (!films.length) {
@@ -48,16 +51,19 @@ export default function FavoritesPage({ locale, favorites, onRemove, onClear }: 
     }))
       .then((schedules) => {
         if (cancelled) return;
-        const next = new Map<string, Show>();
+        const next = new Map<string, { show: Show; screening: Screening }>();
         schedules.forEach(({ date, shows }) => shows.forEach((show) => {
-          show.times.forEach((time) => next.set(favoriteKey(show.title, date, time, show.cinema), show));
+          show.screenings.forEach((screening) => next.set(
+            favoriteKey(show.canonicalTitle, date, screening.time, show.cinema, screening, show.source),
+            { show, screening },
+          ));
         }));
         setShowsByFavorite(next);
       })
       .catch(() => { if (!cancelled) setShowsByFavorite(new Map()); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dates, films.length]);
+  }, [dateKey, films.length]);
 
   const copyLink = async () => {
     try {
@@ -95,10 +101,10 @@ export default function FavoritesPage({ locale, favorites, onRemove, onClear }: 
       ) : (
         <div className="grid gap-5 md:grid-cols-2">
           {films.map((film) => {
-            const key = favoriteKey(film.title, film.date, film.time, film.cinema);
-            const matchingShow = showsByFavorite.get(key);
-            const poster = film.poster ?? matchingShow?.poster;
-            const ticketLink = film.link ?? matchingShow?.link;
+            const key = favoriteFilmKey(film);
+            const match = showsByFavorite.get(key);
+            const poster = film.poster ?? match?.show.poster;
+            const ticketLink = film.link ?? match?.screening.link ?? match?.show.link;
             return (
               <article key={key} className="relative overflow-hidden border border-white/8 bg-retro-card">
                 {!isShared && <button type="button" onClick={() => onRemove(film)} aria-label={t.favorites.remove} title={t.favorites.remove} className="absolute right-3 top-3 z-10 grid size-10 place-items-center border border-retro-yellow bg-retro-bg/90 text-2xl text-retro-yellow backdrop-blur">★</button>}
@@ -110,9 +116,10 @@ export default function FavoritesPage({ locale, favorites, onRemove, onClear }: 
                     <div className="mt-5 border-t border-white/8 pt-3">
                       <p className="text-xs font-bold tracking-wide text-gray-300">{film.cinema}</p>
                       <span className="mt-2 inline-block border border-retro-yellow/30 bg-retro-yellow/5 px-3 py-1.5 text-sm font-bold text-retro-yellow">{film.time}</span>
+                      <span className="mt-2 block"><ScreeningBadges locale={locale} screening={film} /></span>
                       <a href={`/${locale}/film/${filmSlug(film.title)}/?date=${film.date}`} className="mt-4 block text-[10px] font-bold tracking-widest text-retro-cyan uppercase hover:text-white">{t.filmPage.allScreenings} →</a>
                       {ticketLink && <a href={ticketLink} target="_blank" rel="noopener noreferrer" className="mt-3 block text-[10px] font-bold tracking-widest text-retro-green uppercase hover:text-retro-cyan">{t.shows.buyTickets} ↗</a>}
-                      {!matchingShow && !ticketLink && <p className="mt-3 text-xs leading-5 text-gray-600">{t.favorites.unavailable}</p>}
+                      {!match && !ticketLink && <p className="mt-3 text-xs leading-5 text-gray-600">{t.favorites.unavailable}</p>}
                     </div>
                   </div>
                 </div>

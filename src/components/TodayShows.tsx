@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { countLabel, translations, type Locale } from "../i18n/translations";
 import type { Show } from "../lib/normalize";
+import { screeningFingerprint, type Screening } from "../lib/screening-language";
 import { favoriteKey } from "../lib/favorites";
 import { filmSlug } from "../lib/film";
 import type { ViewMode } from "./ShowFilters";
+import ScreeningBadges from "./ScreeningBadges";
 
 interface Props {
   locale: Locale;
@@ -13,7 +15,7 @@ interface Props {
   emptyMessage?: string;
   selectedDate: string;
   favoriteKeys: Set<string>;
-  onToggleFavorite: (show: Show, time: string) => void;
+  onToggleFavorite: (show: Show, screening: Screening) => void;
 }
 
 function normalizeTitle(title: string): string {
@@ -42,7 +44,7 @@ function ShowCarousel({
   source?: string;
   selectedDate: string;
   favoriteKeys: Set<string>;
-  onToggleFavorite: (show: Show, time: string) => void;
+  onToggleFavorite: (show: Show, screening: Screening) => void;
 }) {
   const t = translations[locale];
   const [emblaRef, emblaApi] = useEmblaCarousel({ align: "start" });
@@ -122,26 +124,30 @@ function ShowCarousel({
                         <span className="mb-3 text-[9px] tracking-widest text-gray-600 uppercase">{t.shows.warsawVenue}</span>
                       )}
                       <div className="mb-5 flex flex-wrap gap-1.5">
-                        {show.times.map((time, j) => {
-                          const isFavorite = favoriteKeys.has(favoriteKey(show.title, selectedDate, time, show.cinema));
-                          return <button
-                              type="button"
-                              key={`${time}-${j}`}
-                              aria-pressed={isFavorite}
-                              aria-label={`${isFavorite ? t.favorites.remove : t.favorites.add}: ${show.title}, ${time}`}
-                              title={isFavorite ? t.favorites.remove : t.favorites.add}
-                              onClick={() => onToggleFavorite(show, time)}
-                              className={`flex items-center gap-1.5 border px-2 py-1 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-retro-cyan ${isFavorite ? "border-retro-yellow bg-retro-yellow/15 text-retro-yellow" : "border-retro-yellow/20 bg-retro-yellow/5 text-retro-yellow hover:border-retro-yellow"}`}
-                            >
-                              <span aria-hidden="true">{isFavorite ? "★" : "☆"}</span>{time}
-                            </button>;
+                        {show.screenings.map((screening, j) => {
+                          const isFavorite = favoriteKeys.has(favoriteKey(show.canonicalTitle, selectedDate, screening.time, show.cinema, screening, show.source));
+                          return <div key={`${screeningFingerprint(screening)}-${j}`} className="space-y-1">
+                            <div className={`flex items-center border ${isFavorite ? "border-retro-yellow bg-retro-yellow/10" : "border-retro-yellow/20 bg-retro-yellow/5"}`}>
+                              <button
+                                type="button"
+                                aria-pressed={isFavorite}
+                                aria-label={`${isFavorite ? t.favorites.remove : t.favorites.add}: ${show.canonicalTitle}, ${screening.time}`}
+                                title={isFavorite ? t.favorites.remove : t.favorites.add}
+                                onClick={() => onToggleFavorite(show, screening)}
+                                className="flex items-center gap-1.5 px-2 py-1 text-xs font-bold text-retro-yellow transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-retro-cyan"
+                              >
+                                <span aria-hidden="true">{isFavorite ? "★" : "☆"}</span>{screening.time}
+                              </button>
+                              {screening.link && <a href={screening.link} target="_blank" rel="noopener noreferrer" aria-label={`${t.shows.buyTickets}: ${show.canonicalTitle}, ${screening.time}`} className="border-l border-retro-yellow/20 px-2 py-1 text-xs text-retro-green hover:text-retro-cyan">↗</a>}
+                            </div>
+                            <ScreeningBadges locale={locale} screening={screening} />
+                          </div>;
                         })}
                       </div>
                       <div className="mt-auto space-y-2 border-t border-white/8 pt-3">
-                        <a href={`/${locale}/film/${filmSlug(show.title)}/?date=${selectedDate}`} className="flex items-center justify-between text-[10px] font-bold tracking-[0.16em] text-retro-cyan uppercase transition-colors hover:text-white">
+                        <a href={`/${locale}/film/${filmSlug(show.canonicalTitle)}/?date=${selectedDate}`} className="flex items-center justify-between text-[10px] font-bold tracking-[0.16em] text-retro-cyan uppercase transition-colors hover:text-white">
                           {t.filmPage.allScreenings} <span aria-hidden="true">→</span>
                         </a>
-                        {show.link && <a href={show.link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between text-[10px] font-bold tracking-[0.16em] text-retro-green uppercase transition-colors hover:text-retro-cyan">{t.shows.buyTickets} <span aria-hidden="true">↗</span></a>}
                       </div>
                     </div>
                   </article>
@@ -194,13 +200,13 @@ export default function TodayShows({ locale, shows, view, emptyMessage, selected
   const groups = new Map<string, { heading: string; shows: Show[]; source?: string }>();
 
   shows.forEach((show) => {
-    const key = view === "film" ? normalizeTitle(show.title) : show.cinema;
+    const key = view === "film" ? normalizeTitle(show.canonicalTitle) : show.cinema;
     const existing = groups.get(key);
     if (existing) {
       existing.shows.push(show);
     } else {
       groups.set(key, {
-        heading: view === "film" ? show.title : show.cinema,
+        heading: view === "film" ? show.canonicalTitle : show.cinema,
         shows: [show],
         source: show.source,
       });

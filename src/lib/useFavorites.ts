@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import type { Show } from "./normalize";
+import type { Screening } from "./screening-language";
 import {
   FAVORITES_CHANGED_EVENT,
   FAVORITES_STORAGE_KEY,
   MAX_FAVORITES,
   favoriteFromShow,
+  favoriteFilmKey,
   favoriteKey,
   sanitizeFavorites,
   type FavoriteFilm,
@@ -39,21 +41,21 @@ export function useFavorites() {
     window.dispatchEvent(new Event(FAVORITES_CHANGED_EVENT));
   };
 
-  const toggle = (show: Show, date: string, time: string): "added" | "removed" | "full" => {
-    const key = favoriteKey(show.title, date, time, show.cinema);
+  const toggle = (show: Show, date: string, screening: Screening): "added" | "removed" | "full" => {
+    const key = favoriteKey(show.canonicalTitle, date, screening.time, show.cinema, screening, show.source);
     const current = loadFavorites();
-    if (current.some((film) => favoriteKey(film.title, film.date, film.time, film.cinema) === key)) {
-      save(current.filter((film) => favoriteKey(film.title, film.date, film.time, film.cinema) !== key));
+    if (current.some((film) => favoriteFilmKey(film) === key)) {
+      save(current.filter((film) => favoriteFilmKey(film) !== key));
       return "removed";
     }
     if (current.length >= MAX_FAVORITES) return "full";
-    save([...current, favoriteFromShow(show, date, time)]);
+    save([...current, favoriteFromShow(show, date, screening)]);
     return "added";
   };
 
   const remove = (film: FavoriteFilm) => {
-    const key = favoriteKey(film.title, film.date, film.time, film.cinema);
-    save(loadFavorites().filter((item) => favoriteKey(item.title, item.date, item.time, item.cinema) !== key));
+    const key = favoriteFilmKey(film);
+    save(loadFavorites().filter((item) => favoriteFilmKey(item) !== key));
   };
 
   const clear = () => save([]);

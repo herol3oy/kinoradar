@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { translations, type Locale } from "../i18n/translations";
-import { favoriteKey } from "../lib/favorites";
+import { favoriteFilmKey, favoriteKey } from "../lib/favorites";
 import { showsForFilm } from "../lib/film";
 import type { Show } from "../lib/normalize";
+import { screeningFingerprint, type Screening } from "../lib/screening-language";
 import { useFavorites } from "../lib/useFavorites";
 import DateSelector from "./DateSelector";
+import ScreeningBadges from "./ScreeningBadges";
 
 type ScheduleResponse = {
   shows: Show[];
@@ -35,15 +37,16 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
   const [loadError, setLoadError] = useState(false);
   const [favoritesNotice, setFavoritesNotice] = useState(false);
   const { favorites, toggle } = useFavorites();
-  const favoriteKeys = new Set(favorites.map((film) => favoriteKey(film.title, film.date, film.time, film.cinema)));
+  const favoriteKeys = new Set(favorites.map(favoriteFilmKey));
 
-  const groups = new Map<string, Array<{ time: string; show: Show }>>();
+  const groups = new Map<string, Array<{ screening: Screening; show: Show }>>();
   shows.forEach((show) => {
     const entries = groups.get(show.cinema) ?? [];
-    show.times.forEach((time) => {
-      if (!entries.some((entry) => entry.time === time)) entries.push({ time, show });
+    show.screenings.forEach((screening) => {
+      const fingerprint = screeningFingerprint(screening);
+      if (!entries.some((entry) => screeningFingerprint(entry.screening) === fingerprint)) entries.push({ screening, show });
     });
-    entries.sort((a, b) => timeValue(a.time) - timeValue(b.time) || a.time.localeCompare(b.time));
+    entries.sort((a, b) => timeValue(a.screening.time) - timeValue(b.screening.time) || screeningFingerprint(a.screening).localeCompare(screeningFingerprint(b.screening)));
     groups.set(show.cinema, entries);
   });
   const cinemaGroups = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b, locale));
@@ -106,12 +109,15 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
             <article key={cinema} className="border border-white/8 bg-retro-card p-5">
               <h2 className="text-lg font-bold text-white">{cinema}</h2>
               <div className="mt-4 flex flex-wrap gap-2">
-                {entries.map(({ time, show }) => {
-                  const selected = favoriteKeys.has(favoriteKey(show.title, selectedDate, time, show.cinema));
-                  return <div key={time} className={`flex items-center border ${selected ? "border-retro-yellow bg-retro-yellow/10" : "border-white/10"}`}>
-                    <button type="button" aria-pressed={selected} aria-label={`${selected ? t.favorites.remove : t.favorites.add}: ${show.title}, ${cinema}, ${time}`} onClick={() => { const result = toggle(show, selectedDate, time); setFavoritesNotice(result === "full"); }} className={`px-2.5 py-2 text-lg ${selected ? "text-retro-yellow" : "text-gray-500 hover:text-retro-yellow"}`}><span aria-hidden="true">{selected ? "★" : "☆"}</span></button>
-                    <span className="pr-2.5 text-sm font-bold text-retro-yellow">{time}</span>
-                    {show.link && <a href={show.link} target="_blank" rel="noopener noreferrer" aria-label={`${t.shows.buyTickets}: ${show.title}, ${cinema}, ${time}`} className="border-l border-white/10 px-2.5 py-2 text-xs text-retro-green hover:text-retro-cyan">↗</a>}
+                {entries.map(({ screening, show }) => {
+                  const selected = favoriteKeys.has(favoriteKey(show.canonicalTitle, selectedDate, screening.time, show.cinema, screening, show.source));
+                  return <div key={screeningFingerprint(screening)} className="space-y-1">
+                    <div className={`flex items-center border ${selected ? "border-retro-yellow bg-retro-yellow/10" : "border-white/10"}`}>
+                      <button type="button" aria-pressed={selected} aria-label={`${selected ? t.favorites.remove : t.favorites.add}: ${show.canonicalTitle}, ${cinema}, ${screening.time}`} onClick={() => { const result = toggle(show, selectedDate, screening); setFavoritesNotice(result === "full"); }} className={`px-2.5 py-2 text-lg ${selected ? "text-retro-yellow" : "text-gray-500 hover:text-retro-yellow"}`}><span aria-hidden="true">{selected ? "★" : "☆"}</span></button>
+                      <span className="pr-2.5 text-sm font-bold text-retro-yellow">{screening.time}</span>
+                      {screening.link && <a href={screening.link} target="_blank" rel="noopener noreferrer" aria-label={`${t.shows.buyTickets}: ${show.canonicalTitle}, ${cinema}, ${screening.time}`} className="border-l border-white/10 px-2.5 py-2 text-xs text-retro-green hover:text-retro-cyan">↗</a>}
+                    </div>
+                    <ScreeningBadges locale={locale} screening={screening} />
                   </div>;
                 })}
               </div>

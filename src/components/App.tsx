@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { countLabel, translations, type Locale } from "../i18n/translations";
-import type { Show } from "../lib/normalize";
+import { mergeShowsForDisplay, withScreenings, type Show } from "../lib/normalize";
+import { isEnglishFriendly, type Screening } from "../lib/screening-language";
 import DateSelector from "./DateSelector";
 import ShowFilters, {
   type QuickPreset,
@@ -9,7 +10,7 @@ import ShowFilters, {
 } from "./ShowFilters";
 import TodayShows from "./TodayShows";
 import type { Cinema } from "../data/cinemas";
-import { favoriteKey } from "../lib/favorites";
+import { favoriteFilmKey } from "../lib/favorites";
 import { useFavorites } from "../lib/useFavorites";
 import FavoritesPage from "./FavoritesPage";
 import { warsawDate, warsawTimeMinutes } from "../lib/warsaw-date";
@@ -63,12 +64,13 @@ export default function App({
   const [fromTime, setFromTime] = useState("");
   const [toTime, setToTime] = useState("");
   const [startingSoon, setStartingSoon] = useState(false);
+  const [englishFriendly, setEnglishFriendly] = useState(false);
   const [sort, setSort] = useState<SortMode>("cinema");
   const [view, setView] = useState<ViewMode>("cinema");
   const [activePreset, setActivePreset] = useState<QuickPreset | null>(null);
   const [favoritesNotice, setFavoritesNotice] = useState(false);
   const { favorites, toggle, remove, clear } = useFavorites();
-  const favoriteKeys = new Set(favorites.map((film) => favoriteKey(film.title, film.date, film.time, film.cinema)));
+  const favoriteKeys = new Set(favorites.map(favoriteFilmKey));
 
   const availableShows = lockedCinema ? shows.filter((show) => show.source === lockedCinema.slug) : shows;
 
@@ -80,37 +82,39 @@ export default function App({
     const until = toTime ? toMinutes(toTime) : null;
     const nowMinutes = warsawTimeMinutes();
     const soonLimit = nowMinutes + 120;
-    const hasTimeFilter = from !== null || until !== null || startingSoon;
+    const hasScreeningFilter = from !== null || until !== null || startingSoon || englishFriendly;
 
     const filtered = availableShows.flatMap((show) => {
-      if (normalizedQuery && !normalizeSearch(show.title).includes(normalizedQuery)) return [];
+      if (normalizedQuery && !normalizeSearch(`${show.canonicalTitle} ${show.title}`).includes(normalizedQuery)) return [];
       if (cinema && show.cinema !== cinema) return [];
-      if (!hasTimeFilter) return [show];
+      if (!hasScreeningFilter) return [show];
 
-      const times = show.times.filter((time) => {
-        const minutes = toMinutes(time);
+      const screenings = show.screenings.filter((screening) => {
+        const minutes = toMinutes(screening.time);
         if (minutes === null) return false;
         if (from !== null && minutes < from) return false;
         if (until !== null && minutes > until) return false;
         if (startingSoon && (minutes < nowMinutes || minutes > soonLimit)) return false;
+        if (englishFriendly && !isEnglishFriendly(screening)) return false;
         return true;
       });
 
-      return times.length ? [{ ...show, times }] : [];
+      return screenings.length ? [withScreenings(show, screenings)] : [];
     });
 
     return filtered.sort((a, b) => {
-      if (sort === "title") return a.title.localeCompare(b.title, locale);
+      if (sort === "title") return a.canonicalTitle.localeCompare(b.canonicalTitle, locale);
       if (sort === "time") {
-        const aTime = Math.min(...a.times.map((time) => toMinutes(time) ?? Number.POSITIVE_INFINITY));
-        const bTime = Math.min(...b.times.map((time) => toMinutes(time) ?? Number.POSITIVE_INFINITY));
-        return aTime - bTime || a.title.localeCompare(b.title, locale);
+        const aTime = Math.min(...a.screenings.map((screening) => toMinutes(screening.time) ?? Number.POSITIVE_INFINITY));
+        const bTime = Math.min(...b.screenings.map((screening) => toMinutes(screening.time) ?? Number.POSITIVE_INFINITY));
+        return aTime - bTime || a.canonicalTitle.localeCompare(b.canonicalTitle, locale);
       }
-      return a.cinema.localeCompare(b.cinema, locale) || a.title.localeCompare(b.title, locale);
+      return a.cinema.localeCompare(b.cinema, locale) || a.canonicalTitle.localeCompare(b.canonicalTitle, locale);
     });
   })();
 
-  const filmCount = new Set(filteredShows.map((show) => normalizeSearch(show.title.trim()))).size;
+  const displayShows = mergeShowsForDisplay(filteredShows);
+  const filmCount = new Set(displayShows.map((show) => normalizeSearch(show.canonicalTitle))).size;
   const cinemaCount = lockedCinema ? 1 : cinemas.length;
   const relevantFailures = lockedCinema
     ? failedCinemas.filter((name) => name === lockedCinema.label)
@@ -122,6 +126,7 @@ export default function App({
     setFromTime("");
     setToTime("");
     setStartingSoon(false);
+    setEnglishFriendly(false);
     setSort("cinema");
     setActivePreset(null);
   };
@@ -176,7 +181,7 @@ export default function App({
     }
   };
 
-  const hasFilters = Boolean(query || cinema || fromTime || toTime || startingSoon);
+  const hasFilters = Boolean(query || cinema || fromTime || toTime || startingSoon || englishFriendly);
   const isStale = updatedAt
     ? Date.now() - new Date(updatedAt).getTime() > 6 * 60 * 60 * 1000
     : false;
@@ -250,6 +255,7 @@ export default function App({
             fromTime={fromTime}
             toTime={toTime}
             startingSoon={startingSoon}
+            englishFriendly={englishFriendly}
             sort={sort}
             view={view}
             activePreset={activePreset}
@@ -261,6 +267,7 @@ export default function App({
             onFromTimeChange={(value) => { setFromTime(value); setActivePreset(null); }}
             onToTimeChange={(value) => { setToTime(value); setActivePreset(null); }}
             onStartingSoonChange={(value) => { setStartingSoon(value); setActivePreset(null); }}
+            onEnglishFriendlyChange={setEnglishFriendly}
             onSortChange={setSort}
             onViewChange={handleViewChange}
             onPresetChange={applyPreset}
@@ -268,7 +275,7 @@ export default function App({
           />
           <TodayShows
             locale={locale}
-            shows={filteredShows}
+            shows={displayShows}
             view={view}
             emptyMessage={
               loadError
@@ -281,8 +288,8 @@ export default function App({
             }
             selectedDate={selectedDate}
             favoriteKeys={favoriteKeys}
-            onToggleFavorite={(show, time) => {
-              const result = toggle(show, selectedDate, time);
+            onToggleFavorite={(show, screening: Screening) => {
+              const result = toggle(show, selectedDate, screening);
               setFavoritesNotice(result === "full");
             }}
           />

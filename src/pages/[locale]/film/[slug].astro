@@ -27,7 +27,7 @@ const shows = showsForFilm(schedule.shows, slug);
 const fallbackTitle = slug.split("-").filter(Boolean).map((word) => word[0]?.toUpperCase() + word.slice(1)).join(" ");
 const film = {
   slug,
-  title: shows[0]?.title ?? fallbackTitle,
+  title: shows[0]?.canonicalTitle ?? fallbackTitle,
   selectedDate,
   shows,
   failedCinemas: schedule.failedCinemas,

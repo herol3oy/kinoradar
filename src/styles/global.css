@@ -16,6 +16,15 @@ html {
   color-scheme: dark;
 }
 
+select {
+  color-scheme: dark;
+}
+
+select option {
+  background-color: var(--color-retro-card);
+  color: #e5e7eb;
+}
+
 astro-island,
 astro-slot,
 astro-static-slot {

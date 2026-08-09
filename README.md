@@ -1,6 +1,6 @@
 # KinoRadar
 
-KinoRadar collects film schedules from independent cinemas in Warsaw and presents them in one place in Polish and English. Pick any of the next seven days, browse films grouped by cinema or film, see available screening times, and follow a ticket link to the cinema's website. Individual screening times can be starred and shared as a read-only favorites list.
+KinoRadar collects film schedules from independent cinemas in Warsaw and presents them in one place in Polish and English. Pick any of the next seven days, browse films grouped by cinema or film, filter for screenings with verified English audio or subtitles, and follow a ticket link to the cinema's website. Individual screening times can be starred and shared as a read-only favorites list.
 
 The application currently aggregates:
 
@@ -92,16 +92,30 @@ The normalized shape shared by the server, API, and UI is:
 
 ```ts
 type Show = {
+  // Existing source fields retained for API compatibility.
   title: string;
   times: string[];
   cinema: string;
   link?: string;
   source?: string;
   poster?: string;
+
+  // Additive canonical identity and per-screening metadata.
+  canonicalTitle: string;
+  screenings: Array<{
+    time: string;
+    link?: string;
+    audioLanguage?: string;
+    subtitleLanguages?: string[];
+    subtitled?: boolean;
+    dubbed?: boolean;
+  }>;
 };
 ```
 
-Cache entries use the key format `SHOWTIMES:YYYY-MM-DD`. Deduplication uses the normalized film title and cinema/source, so multiple screening times for a film are expected to be combined by its cinema parser before normalization.
+Language codes are normalized to lowercase ISO 639-1 values. Missing language fields mean that the source did not provide verified information; KinoRadar does not guess. Generic `napisy` and `dubbing` labels are retained as generic badges. A screening is included by the English-friendly filter only when English audio or English subtitles are explicit.
+
+Cache entries use the key format `SHOWTIMES:YYYY-MM-DD` and carry a schema version. Records from older schemas are treated as misses and refreshed. Display grouping uses `canonicalTitle`, while the source-provided `title`, `times`, and `link` remain available to API consumers.
 
 ## Project structure
 
@@ -168,7 +182,7 @@ Useful commands:
 GET /api/today.json?date=2026-08-09
 ```
 
-The response is a JSON array of normalized `Show` objects. If `date` is absent or does not match `YYYY-MM-DD`, the server uses the current UTC date.
+The response is a JSON array of normalized `Show` objects. If `date` is absent or invalid, the server uses the current Warsaw calendar date. Pass `meta=1` to receive the schedule object with `schemaVersion`, `updatedAt`, and `failedCinemas` in addition to `shows`.
 
 To skip a cached value:
 
@@ -201,7 +215,7 @@ After deploying changes to routes or metadata:
 
 The sitemap contains the two localized homepages and 12 cinema pages per language. Cinema pages intentionally omit `LocalBusiness` markup until verified addresses and venue details are available.
 
-Favorites live only in the visitor's browser; no account or backend write is required. Shared URLs contain only film titles and selected dates, are limited to 20 items, render read-only, use clean canonical URLs, and are excluded from indexing and the sitemap.
+Favorites live only in the visitor's browser; no account or backend write is required. Shared URLs contain the canonical film identity, selected screening, and compact language metadata, are limited to 20 items, render read-only, use clean canonical URLs, and are excluded from indexing and the sitemap. Favorites and shared lists use payload version 3; earlier local or shared versions are intentionally not migrated.
 
 ## Deployment
 

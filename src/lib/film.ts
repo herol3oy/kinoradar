@@ -8,5 +8,5 @@ export function filmSlug(title: string): string {
 }
 
 export function showsForFilm(shows: Show[], slug: string): Show[] {
-  return shows.filter((show) => filmSlug(show.title) === slug);
+  return shows.filter((show) => filmSlug(show.canonicalTitle) === slug);
 }
