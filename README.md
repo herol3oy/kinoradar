@@ -1,43 +1,187 @@
-# Astro Starter Kit: Minimal
+# KinoRadar
 
-```sh
-npm create astro@latest -- --template minimal
+KinoRadar collects film schedules from independent cinemas in Warsaw and presents them in one place. Pick any of the next seven days, browse films grouped by cinema, see available screening times, and follow a film card to the cinema's ticket page.
+
+The application currently aggregates:
+
+- Kinoteka
+- Kino Muranów
+- U-Jazdowski
+- Kino Wisła
+- Kino Atlantic
+- Kinoluna
+- Kino Kultura
+- Kino Amondo
+- Kino Elektronik
+- Kino Cytadela
+- Iluzjon
+- Kinogram
+
+Each cinema has its own parser because the source websites use different markup and schedule formats. KinoRadar runs all parsers independently, converts their results to a shared data model, and keeps results from the parsers that succeed even if another cinema is temporarily unavailable.
+
+## How it works
+
+On the first visit, Astro renders today's schedule on the server. The page hydrates a React application in the browser, where the date selector can request schedules for the following six days. Results are grouped by cinema and displayed in horizontal carousels.
+
+```mermaid
+flowchart LR
+    Visitor[Browser] -->|GET /| Page[Astro page]
+    Page -->|Read today's key| KV[(Cloudflare KV)]
+    KV -->|Cached shows| Page
+    Page -. cache miss .-> Scraper[Scraper orchestrator]
+    Scraper --> Parsers[Cinema parsers]
+    Parsers --> Sites[Cinema websites]
+    Scraper -->|Normalized shows| KV
+    Page -->|HTML + initial data| Visitor
+    Visitor -->|Select another date| API[GET /api/today.json]
+    API --> KV
+    API -. cache miss .-> Scraper
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+The API accepts a `date=YYYY-MM-DD` query parameter. It checks KV first and, on a miss, scrapes all cinemas concurrently, normalizes and deduplicates the shows, stores the result for 24 hours, and returns JSON. Passing `force=1` bypasses the cache and refreshes the selected date.
 
-## 🚀 Project Structure
+A Cloudflare cron trigger runs every four hours and refreshes today and tomorrow in the background. This normally keeps the most frequently requested schedules warm without delaying a visitor's request.
 
-Inside of your Astro project, you'll see the following folders and files:
+```mermaid
+sequenceDiagram
+    participant C as Cloudflare cron
+    participant W as Worker
+    participant S as Scraper
+    participant P as 12 cinema parsers
+    participant K as Cloudflare KV
+
+    C->>W: Run every 4 hours
+    par Refresh today
+        W->>S: getTodayShows(today)
+        S->>P: Run parsers concurrently
+        P-->>S: Raw schedules
+        S-->>W: Normalized, deduplicated shows
+        W->>K: Store SHOWTIMES:today
+    and Refresh tomorrow
+        W->>S: getTodayShows(tomorrow)
+        S->>P: Run parsers concurrently
+        P-->>S: Raw schedules
+        S-->>W: Normalized, deduplicated shows
+        W->>K: Store SHOWTIMES:tomorrow
+    end
+```
+
+## Architecture
+
+KinoRadar uses Astro's server output with the Cloudflare adapter. Astro owns routing and server rendering, while React provides the interactive date selector and film carousels. Tailwind CSS supplies the styling, Cheerio parses cinema HTML, and Embla powers the carousels.
+
+| Area | Responsibility | Main files |
+| --- | --- | --- |
+| Page and SSR | Loads today's cached data (or scrapes on a miss) and renders the application shell | `src/pages/index.astro` |
+| Client UI | Selects a date, fetches new data, groups shows by cinema, and renders carousels | `src/components/` |
+| JSON API | Validates the requested date and implements cache-first retrieval | `src/pages/api/today.json.ts` |
+| Scraping | Runs cinema parsers concurrently, tolerates individual failures, normalizes results, and removes duplicates | `src/server/scraper.ts` |
+| Cinema adapters | Fetch and extract schedules from each cinema's website | `src/lib/parsers/` |
+| Data model | Converts cinema-specific output into the common `Show` shape | `src/lib/normalize.ts` |
+| Cache | Reads and writes date-based entries with a 24-hour TTL | `src/server/kv.ts` |
+| Worker and cron | Serves Astro and preloads today and tomorrow on a schedule | `worker.ts` |
+| Infrastructure | Configures Astro, Cloudflare Workers, static assets, cron, and the KV binding | `astro.config.mjs`, `wrangler.jsonc` |
+
+The normalized shape shared by the server, API, and UI is:
+
+```ts
+type Show = {
+  title: string;
+  times: string[];
+  cinema: string;
+  link?: string;
+  source?: string;
+  poster?: string;
+};
+```
+
+Cache entries use the key format `SHOWTIMES:YYYY-MM-DD`. Deduplication uses the normalized film title and cinema/source, so multiple screening times for a film are expected to be combined by its cinema parser before normalization.
+
+## Project structure
 
 ```text
-/
-├── public/
+.
+├── public/                    # Favicons and static assets
 ├── src/
-│   └── pages/
-│       └── index.astro
+│   ├── components/            # Hydrated React UI
+│   ├── lib/
+│   │   ├── parsers/           # One adapter per cinema
+│   │   └── normalize.ts       # Shared schedule model
+│   ├── pages/
+│   │   ├── api/today.json.ts  # Date-based schedule endpoint
+│   │   └── index.astro        # Server-rendered home page
+│   ├── server/
+│   │   ├── kv.ts              # KV cache access
+│   │   └── scraper.ts         # Parser orchestration
+│   └── styles/global.css
+├── worker.ts                  # Cloudflare fetch and cron handlers
+├── astro.config.mjs
+├── wrangler.jsonc
 └── package.json
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Local development
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+Requirements:
 
-Any static assets, like images, can be placed in the `public/` directory.
+- Node.js 22.12 or newer
+- npm
 
-## 🧞 Commands
+Install dependencies and start Astro's development server:
 
-All commands are run from the root of the project, from a terminal:
+```sh
+npm install
+npm run dev
+```
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+The site is available at `http://localhost:4321` by default. Because server-rendered routes use the `SHOWTIMES` Cloudflare binding, use the Wrangler-backed preview when you need to test the production runtime and KV integration:
 
-## 👀 Want to learn more?
+```sh
+npm run preview
+```
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Useful commands:
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Astro development server |
+| `npm run build` | Create the production build in `dist/` |
+| `npm run preview` | Build and run the app locally with Wrangler |
+| `npm run generate-types` | Regenerate Cloudflare binding types |
+| `npm run deploy` | Build and deploy the Cloudflare Worker |
+| `npm run astro -- --help` | Show Astro CLI help |
+
+## API
+
+```http
+GET /api/today.json?date=2026-08-09
+```
+
+The response is a JSON array of normalized `Show` objects. If `date` is absent or does not match `YYYY-MM-DD`, the server uses the current UTC date.
+
+To skip a cached value:
+
+```http
+GET /api/today.json?date=2026-08-09&force=1
+```
+
+This endpoint is public. `force=1` should therefore be used carefully because every request fetches all cinema websites.
+
+## Adding a cinema
+
+1. Add a parser in `src/lib/parsers/`. It should export an async parse function and a `siteName`, and return objects containing at least a title and screening times. Links and posters are optional.
+2. Register the parser in `CINEMA_PARSERS` in `src/server/scraper.ts` with its display name and source slug.
+3. Add the cinema to the descriptive copy in `src/pages/index.astro`.
+4. Build the project and exercise the API for a date that has a published schedule.
+
+Parsers should throw on unsuccessful upstream responses. The orchestrator uses `Promise.allSettled`, logs that failure, and still returns results from the other cinemas.
+
+## Deployment
+
+The production target is Cloudflare Workers. Before deploying your own instance, update the Worker name and KV namespace ID in `wrangler.jsonc`, ensure the `SHOWTIMES` binding exists, and then run:
+
+```sh
+npm run deploy
+```
+
+The same configuration defines the `0 */4 * * *` cron schedule and enables Worker observability.
