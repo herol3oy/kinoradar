@@ -3,6 +3,7 @@ export type ViewMode = "cinema" | "film";
 export type QuickPreset = "now" | "after-work" | "tonight";
 
 interface Props {
+  locale: Locale;
   cinemas: string[];
   query: string;
   cinema: string;
@@ -29,6 +30,7 @@ const fieldClass =
   "w-full bg-black/20 border border-white/10 text-gray-200 text-sm px-3 py-2.5 transition-colors focus:outline-none focus:border-retro-cyan/70 hover:border-white/20";
 
 export default function ShowFilters({
+  locale,
   cinemas,
   query,
   cinema,
@@ -50,21 +52,23 @@ export default function ShowFilters({
   onPresetChange,
   onReset,
 }: Props) {
+  const t = translations[locale].filters;
+  const filmForms = translations[locale].hero.films;
   const hasFilters = Boolean(query || cinema || fromTime || toTime || startingSoon);
 
   return (
     <section
-      aria-label="Film filters"
+      aria-label={t.aria}
       className="mb-10 border border-white/8 bg-retro-surface/80 shadow-[0_24px_80px_rgba(0,0,0,0.25)] backdrop-blur-sm"
     >
       <div className="flex flex-wrap items-center gap-2 border-b border-white/8 px-4 py-4 sm:px-5">
         <span className="mr-2 text-[10px] font-bold tracking-[0.22em] text-gray-500 uppercase">
-          Quick picks
+          {t.quickPicks}
         </span>
         {([
-          ["now", "NEXT 2 HOURS"],
-          ["after-work", "AFTER WORK"],
-          ["tonight", "TONIGHT"],
+          ["now", t.nextTwoHours],
+          ["after-work", t.afterWork],
+          ["tonight", t.tonight],
         ] as const).map(([preset, label]) => {
           const disabled = preset === "now" && !startingSoonAvailable;
           return (
@@ -74,7 +78,7 @@ export default function ShowFilters({
               disabled={disabled}
               aria-pressed={activePreset === preset}
               onClick={() => onPresetChange(preset)}
-              title={disabled ? "The next-two-hours preset is available for today only" : undefined}
+              title={disabled ? t.todayOnlyPreset : undefined}
               className={`border px-3 py-2 text-[10px] font-bold tracking-[0.16em] uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${
                 activePreset === preset
                   ? "border-retro-magenta bg-retro-magenta text-black shadow-[0_0_18px_rgba(255,0,255,0.18)]"
@@ -89,24 +93,24 @@ export default function ShowFilters({
 
       <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-5">
         <label className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-500 lg:col-span-2">
-          Search films
+          {t.search}
           <input
             type="search"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Start typing a title..."
+            placeholder={t.searchPlaceholder}
             className={`${fieldClass} mt-2 placeholder:text-gray-700`}
           />
         </label>
 
         <label className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-500">
-          Cinema
+          {t.cinema}
           <select
             value={cinema}
             onChange={(event) => onCinemaChange(event.target.value)}
             className={`${fieldClass} mt-2 cursor-pointer uppercase`}
           >
-            <option value="">ALL CINEMAS</option>
+            <option value="">{t.allCinemas}</option>
             {cinemas.map((name) => (
               <option key={name} value={name}>
                 {name}
@@ -116,7 +120,7 @@ export default function ShowFilters({
         </label>
 
         <label className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-500">
-          From
+          {t.from}
           <input
             type="time"
             value={fromTime}
@@ -126,7 +130,7 @@ export default function ShowFilters({
         </label>
 
         <label className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-500">
-          Until
+          {t.until}
           <input
             type="time"
             value={toTime}
@@ -138,7 +142,7 @@ export default function ShowFilters({
 
       <div className="flex flex-wrap items-end gap-4 border-t border-white/8 bg-black/10 px-4 py-4 sm:px-5">
         <fieldset>
-          <legend className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-500">View by</legend>
+          <legend className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-500">{t.viewBy}</legend>
           <div className="mt-2 flex" role="group">
             {(["cinema", "film"] as const).map((mode) => (
               <button
@@ -152,22 +156,22 @@ export default function ShowFilters({
                     : "border-white/10 text-gray-500 hover:border-retro-cyan/50 hover:text-retro-cyan"
                 }`}
               >
-                {mode}
+                {mode === "cinema" ? t.cinema : t.film}
               </button>
             ))}
           </div>
         </fieldset>
 
         <label className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-500">
-          Sort by
+          {t.sortBy}
           <select
             value={sort}
             onChange={(event) => onSortChange(event.target.value as SortMode)}
             className={`${fieldClass} mt-2 min-w-44 cursor-pointer uppercase`}
           >
-            <option value="cinema">CINEMA</option>
-            <option value="time">EARLIEST TIME</option>
-            <option value="title">TITLE A-Z</option>
+            <option value="cinema">{t.cinema}</option>
+            <option value="time">{t.earliest}</option>
+            <option value="title">{t.title}</option>
           </select>
         </label>
 
@@ -177,7 +181,7 @@ export default function ShowFilters({
               ? "cursor-pointer border-white/10 text-retro-yellow hover:border-retro-yellow/50"
               : "cursor-not-allowed border-white/5 text-gray-700"
           }`}
-          title={startingSoonAvailable ? "Only show screenings starting in the next two hours" : "Available for today only"}
+          title={startingSoonAvailable ? t.startingSoonHint : t.todayOnly}
         >
           <input
             type="checkbox"
@@ -186,7 +190,7 @@ export default function ShowFilters({
             onChange={(event) => onStartingSoonChange(event.target.checked)}
             className="accent-[var(--color-retro-yellow)]"
           />
-          STARTING IN 2H
+          {t.startingSoon}
         </label>
 
         <button
@@ -195,14 +199,15 @@ export default function ShowFilters({
           disabled={!hasFilters && sort === "cinema"}
           className="border border-white/10 px-4 py-2.5 text-[10px] font-bold tracking-widest text-retro-green uppercase transition-colors hover:border-retro-green/60 disabled:cursor-not-allowed disabled:opacity-30"
         >
-          [ RESET ]
+          {t.reset}
         </button>
 
         <output className="ml-auto flex items-center gap-2 py-2.5 text-[10px] tracking-[0.16em] text-gray-500 uppercase" aria-live="polite">
           <span className="size-1.5 rounded-full bg-retro-green shadow-[0_0_8px_var(--color-retro-green)]" />
-          {resultCount} {resultCount === 1 ? "film" : "films"} in signal
+          {resultCount} {countLabel(locale, resultCount, filmForms)} {t.inSignal}
         </output>
       </div>
     </section>
   );
 }
+import { countLabel, translations, type Locale } from "../i18n/translations";

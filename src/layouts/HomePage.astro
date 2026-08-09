@@ -1,0 +1,81 @@
+---
+import "../styles/global.css";
+import { env } from "cloudflare:workers";
+import App from "../components/App";
+import type { Locale } from "../i18n/translations";
+import { translations } from "../i18n/translations";
+import { getCachedSchedule } from "../server/kv";
+import { setCachedShows } from "../server/kv";
+import { getShowsReport } from "../server/scraper";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = translations[locale];
+const otherLocale: Locale = locale === "pl" ? "en" : "pl";
+const canonicalUrl = new URL(`/${locale}/`, Astro.site);
+
+const today = new Date().toISOString().slice(0, 10);
+let schedule = await getCachedSchedule(env.SHOWTIMES, today);
+if (!schedule) {
+  const result = await getShowsReport(today);
+  schedule = await setCachedShows(env.SHOWTIMES, today, result.shows, result.failedCinemas);
+}
+---
+
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#07090d" />
+    <meta name="description" content={t.meta.description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang="pl" href={new URL("/pl/", Astro.site)} />
+    <link rel="alternate" hreflang="en" href={new URL("/en/", Astro.site)} />
+    <link rel="alternate" hreflang="x-default" href={new URL("/pl/", Astro.site)} />
+    <title>{t.meta.title}</title>
+  </head>
+  <body>
+    <header class="border-b border-white/8 bg-retro-bg/80 backdrop-blur-xl">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
+        <a href={`/${locale}/`} class="group flex items-center gap-3" aria-label={t.header.home}>
+          <span class="relative grid size-10 place-items-center border border-retro-magenta/50 bg-retro-magenta/10">
+            <span class="size-2 rounded-full bg-retro-magenta shadow-[0_0_18px_var(--color-retro-magenta)]"></span>
+            <span class="absolute inset-1 border border-retro-magenta/15"></span>
+          </span>
+          <span>
+            <span class="block text-xl font-bold tracking-[0.24em] text-white uppercase">Kino<span class="text-retro-magenta">Radar</span></span>
+            <span class="hidden text-[10px] tracking-[0.3em] text-gray-600 uppercase sm:block">{t.header.tagline}</span>
+          </span>
+        </a>
+        <div class="flex items-center gap-4 sm:gap-6">
+          <span class="hidden items-center gap-2 text-[10px] tracking-[0.22em] text-retro-green uppercase md:flex">
+            <span class="size-1.5 animate-pulse rounded-full bg-retro-green shadow-[0_0_10px_var(--color-retro-green)]"></span>
+            {t.header.online}
+          </span>
+          <nav aria-label={t.header.language} class="flex border border-white/10 text-[10px] font-bold tracking-widest uppercase">
+            <a href={`/${locale}/`} aria-current="page" class="bg-retro-cyan px-2.5 py-2 text-black">{locale}</a>
+            <a href={`/${otherLocale}/`} hreflang={otherLocale} lang={otherLocale} class="px-2.5 py-2 text-gray-500 transition-colors hover:text-retro-cyan">{otherLocale}</a>
+          </nav>
+        </div>
+      </div>
+    </header>
+    <main class="pb-16">
+      <App
+        locale={locale}
+        shows={schedule.shows}
+        updatedAt={schedule.updatedAt}
+        failedCinemas={schedule.failedCinemas}
+        client:load
+      />
+    </main>
+    <footer class="border-t border-white/8 px-4 py-6 text-center text-[10px] tracking-[0.2em] text-gray-700 uppercase">
+      {t.footer}
+    </footer>
+  </body>
+</html>

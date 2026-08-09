@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { countLabel, translations, type Locale } from "../i18n/translations";
 import type { Show } from "../lib/normalize";
 import DateSelector from "./DateSelector";
 import ShowFilters, {
@@ -9,6 +10,7 @@ import ShowFilters, {
 import TodayShows from "./TodayShows";
 
 interface Props {
+  locale: Locale;
   shows: Show[];
   updatedAt: string | null;
   failedCinemas: string[];
@@ -34,10 +36,12 @@ function normalizeSearch(value: string): string {
 }
 
 export default function App({
+  locale,
   shows: initialShows,
   updatedAt: initialUpdatedAt,
   failedCinemas: initialFailedCinemas,
 }: Props) {
+  const t = translations[locale];
   const today = new Date().toISOString().slice(0, 10);
   const [selectedDate, setSelectedDate] = useState(today);
   const [shows, setShows] = useState<Show[]>(initialShows);
@@ -55,8 +59,8 @@ export default function App({
   const [activePreset, setActivePreset] = useState<QuickPreset | null>(null);
 
   const cinemas = useMemo(
-    () => [...new Set(shows.map((show) => show.cinema))].sort((a, b) => a.localeCompare(b, "pl")),
-    [shows],
+    () => [...new Set(shows.map((show) => show.cinema))].sort((a, b) => a.localeCompare(b, locale)),
+    [locale, shows],
   );
 
   const filteredShows = useMemo(() => {
@@ -86,15 +90,15 @@ export default function App({
     });
 
     return filtered.sort((a, b) => {
-      if (sort === "title") return a.title.localeCompare(b.title, "pl");
+      if (sort === "title") return a.title.localeCompare(b.title, locale);
       if (sort === "time") {
         const aTime = Math.min(...a.times.map((time) => toMinutes(time) ?? Number.POSITIVE_INFINITY));
         const bTime = Math.min(...b.times.map((time) => toMinutes(time) ?? Number.POSITIVE_INFINITY));
-        return aTime - bTime || a.title.localeCompare(b.title, "pl");
+        return aTime - bTime || a.title.localeCompare(b.title, locale);
       }
-      return a.cinema.localeCompare(b.cinema, "pl") || a.title.localeCompare(b.title, "pl");
+      return a.cinema.localeCompare(b.cinema, locale) || a.title.localeCompare(b.title, locale);
     });
-  }, [cinema, fromTime, query, shows, sort, startingSoon, toTime]);
+  }, [cinema, fromTime, locale, query, shows, sort, startingSoon, toTime]);
 
   const filmCount = useMemo(
     () => new Set(filteredShows.map((show) => normalizeSearch(show.title.trim()))).size,
@@ -170,38 +174,38 @@ export default function App({
     <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
       <section className="mb-8 grid gap-6 border-b border-white/8 pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
-          <p className="mb-3 text-[10px] tracking-[0.3em] text-retro-magenta uppercase">Live Warsaw repertory</p>
+          <p className="mb-3 text-[10px] tracking-[0.3em] text-retro-magenta uppercase">{t.hero.eyebrow}</p>
           <h1 className="max-w-3xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
-            Find your next <span className="text-retro-cyan [text-shadow:0_0_24px_rgba(0,255,255,0.3)]">screening.</span>
+            {t.hero.title} <span className="text-retro-cyan [text-shadow:0_0_24px_rgba(0,255,255,0.3)]">{t.hero.accent}</span>
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-gray-500">
-            Independent cinema schedules, synchronized and searchable in one signal.
+            {t.hero.description}
           </p>
         </div>
         <div className="flex gap-6 text-right">
           <div>
             <span className="block text-2xl font-bold text-white">{filmCount}</span>
-            <span className="text-[9px] tracking-[0.2em] text-gray-600 uppercase">films</span>
+            <span className="text-[9px] tracking-[0.2em] text-gray-600 uppercase">{countLabel(locale, filmCount, t.hero.films)}</span>
           </div>
           <div>
             <span className="block text-2xl font-bold text-white">{cinemas.length}</span>
-            <span className="text-[9px] tracking-[0.2em] text-gray-600 uppercase">cinemas</span>
+            <span className="text-[9px] tracking-[0.2em] text-gray-600 uppercase">{countLabel(locale, cinemas.length, t.hero.cinemas)}</span>
           </div>
         </div>
       </section>
 
       <div className="mb-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xs font-bold tracking-[0.22em] text-gray-400 uppercase">Select date</h2>
-          <span className="text-[10px] tracking-widest text-gray-700 uppercase">Next 7 days</span>
+          <h2 className="text-xs font-bold tracking-[0.22em] text-gray-400 uppercase">{t.date.heading}</h2>
+          <span className="text-[10px] tracking-widest text-gray-700 uppercase">{t.date.range}</span>
         </div>
-        <DateSelector selected={selectedDate} onChange={handleDateChange} />
+        <DateSelector locale={locale} selected={selectedDate} onChange={handleDateChange} />
       </div>
       {loading ? (
         <div className="grid min-h-72 place-items-center border border-white/8 bg-white/[0.015]">
           <div className="text-center">
             <span className="mx-auto mb-4 block size-8 animate-spin rounded-full border border-retro-cyan/20 border-t-retro-cyan" />
-            <p className="text-xs tracking-[0.25em] text-retro-cyan uppercase">Scanning schedules</p>
+            <p className="text-xs tracking-[0.25em] text-retro-cyan uppercase">{t.loading}</p>
           </div>
         </div>
       ) : (
@@ -209,20 +213,21 @@ export default function App({
           {(loadError || failedCinemas.length > 0 || isStale) && (
             <aside className="mb-4 border border-retro-yellow/30 bg-retro-yellow/5 px-4 py-3 text-xs leading-5 tracking-wider text-retro-yellow uppercase" role="status">
               {loadError ? (
-                <span>_SCHEDULE_LOAD_FAILED — PLEASE TRY ANOTHER DATE OR REFRESH.</span>
+                <span>{t.status.loadFailed}</span>
               ) : failedCinemas.length > 0 ? (
                 <span>
-                  {shows.length === 0 ? "_SCHEDULE_UPDATE_FAILED" : "_PARTIAL_RESULTS"} — COULD NOT UPDATE: {failedCinemas.join(", ")}.
-                  {updatedAt && ` LAST ATTEMPT: ${new Date(updatedAt).toLocaleString("pl-PL")}.`}
+                  {shows.length === 0 ? t.status.updateFailed : t.status.partialResults} — {t.status.couldNotUpdate}: {failedCinemas.join(", ")}.
+                  {updatedAt && ` ${t.status.lastAttempt}: ${new Date(updatedAt).toLocaleString(locale)}.`}
                 </span>
               ) : (
                 <span>
-                  _STALE_RESULTS — LAST UPDATED {new Date(updatedAt!).toLocaleString("pl-PL")}.
+                  {t.status.staleResults} {new Date(updatedAt!).toLocaleString(locale)}.
                 </span>
               )}
             </aside>
           )}
           <ShowFilters
+            locale={locale}
             cinemas={cinemas}
             query={query}
             cinema={cinema}
@@ -245,16 +250,17 @@ export default function App({
             onReset={resetFilters}
           />
           <TodayShows
+            locale={locale}
             shows={filteredShows}
             view={view}
             emptyMessage={
               loadError
-                ? "The schedule could not be loaded. Please try again."
+                ? t.shows.loadFailed
                 : shows.length === 0
-                  ? "No screenings have been published for this date."
+                  ? t.shows.nonePublished
                   : hasFilters
-                    ? "No screenings match the selected filters."
-                    : "No screenings are available for this date."
+                    ? t.shows.noMatches
+                    : t.shows.noneAvailable
             }
           />
         </>

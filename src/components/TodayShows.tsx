@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
+import { countLabel, translations, type Locale } from "../i18n/translations";
 import type { Show } from "../lib/normalize";
 import type { ViewMode } from "./ShowFilters";
 
 interface Props {
+  locale: Locale;
   shows: Show[];
   view: ViewMode;
   emptyMessage?: string;
@@ -22,11 +24,14 @@ function ShowCarousel({
   heading,
   shows,
   view,
+  locale,
 }: {
   heading: string;
   shows: Show[];
   view: ViewMode;
+  locale: Locale;
 }) {
+  const t = translations[locale];
   const [emblaRef, emblaApi] = useEmblaCarousel({ align: "start" });
   const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
   const [nextBtnDisabled, setNextBtnDisabled] = useState(true);
@@ -57,14 +62,14 @@ function ShowCarousel({
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
           <span className="mb-2 block text-[9px] tracking-[0.24em] text-gray-700 uppercase">
-            {view === "film" ? "Film signal" : "Cinema channel"}
+            {view === "film" ? t.shows.filmSignal : t.shows.cinemaChannel}
           </span>
           <h2 className="text-xl font-bold tracking-wide text-white sm:text-2xl">
             {heading}
           </h2>
         </div>
         <span className="shrink-0 text-[10px] tracking-widest text-gray-600 uppercase">
-          {shows.length} {shows.length === 1 ? (view === "film" ? "cinema" : "film") : (view === "film" ? "cinemas" : "films")}
+          {shows.length} {countLabel(locale, shows.length, view === "film" ? t.hero.cinemas : t.hero.films)}
         </span>
       </div>
 
@@ -103,7 +108,7 @@ function ShowCarousel({
                         {view === "film" ? show.cinema : show.title}
                       </h3>
                       {view === "film" && (
-                        <span className="mb-3 text-[9px] tracking-widest text-gray-600 uppercase">Warsaw venue</span>
+                        <span className="mb-3 text-[9px] tracking-widest text-gray-600 uppercase">{t.shows.warsawVenue}</span>
                       )}
                       <div className="mb-5 flex flex-wrap gap-1.5">
                         {show.times.map((time, j) => (
@@ -117,7 +122,7 @@ function ShowCarousel({
                       </div>
                       {show.link && (
                         <span className="mt-auto flex items-center justify-between border-t border-white/8 pt-3 text-[10px] font-bold tracking-[0.16em] text-retro-green uppercase transition-colors group-hover:text-retro-cyan">
-                          Buy tickets <span aria-hidden="true">↗</span>
+                          {t.shows.buyTickets} <span aria-hidden="true">↗</span>
                         </span>
                       )}
                     </div>
@@ -131,7 +136,7 @@ function ShowCarousel({
         <button
           onClick={scrollPrev}
           disabled={prevBtnDisabled}
-          aria-label="Previous slide"
+          aria-label={t.shows.previous}
           className="absolute -left-2 top-1/2 -translate-y-1/2 border border-white/10 bg-retro-bg/95 p-2.5 text-retro-cyan shadow-xl backdrop-blur transition-colors hover:border-retro-cyan disabled:pointer-events-none disabled:opacity-0 sm:-left-4"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,7 +147,7 @@ function ShowCarousel({
         <button
           onClick={scrollNext}
           disabled={nextBtnDisabled}
-          aria-label="Next slide"
+          aria-label={t.shows.next}
           className="absolute -right-2 top-1/2 -translate-y-1/2 border border-white/10 bg-retro-bg/95 p-2.5 text-retro-cyan shadow-xl backdrop-blur transition-colors hover:border-retro-cyan disabled:pointer-events-none disabled:opacity-0 sm:-right-4"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,14 +159,15 @@ function ShowCarousel({
   );
 }
 
-export default function TodayShows({ shows, view, emptyMessage }: Props) {
+export default function TodayShows({ locale, shows, view, emptyMessage }: Props) {
+  const t = translations[locale].shows;
   if (!shows.length) {
     return (
       <div className="border border-dashed border-white/10 bg-white/[0.015] px-4 py-20 text-center">
         <span className="mx-auto mb-5 grid size-12 place-items-center border border-retro-yellow/20 text-xl text-retro-yellow">∅</span>
-        <p className="text-xs font-bold tracking-[0.22em] text-retro-yellow uppercase">No films found</p>
+        <p className="text-xs font-bold tracking-[0.22em] text-retro-yellow uppercase">{t.noFilms}</p>
         <p className="mx-auto mt-3 max-w-md text-xs leading-5 tracking-wider text-gray-600">
-          {emptyMessage ?? "Try changing or resetting the filters."}
+          {emptyMessage ?? t.tryFilters}
         </p>
       </div>
     );
@@ -185,7 +191,7 @@ export default function TodayShows({ shows, view, emptyMessage }: Props) {
   return (
     <div className="w-full">
       {[...groups.entries()].map(([key, group]) => (
-        <ShowCarousel key={`${view}-${key}`} heading={group.heading} shows={group.shows} view={view} />
+        <ShowCarousel key={`${view}-${key}`} heading={group.heading} shows={group.shows} view={view} locale={locale} />
       ))}
     </div>
   );
