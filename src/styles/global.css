@@ -2,8 +2,8 @@
 
 @theme {
   --color-retro-bg: #0a0a0a;
-  --color-retro-surface: #111;
-  --color-retro-card: #1a1a1a;
+  --color-retro-surface: #0e1117;
+  --color-retro-card: #12161d;
   --color-retro-cyan: #0ff;
   --color-retro-magenta: #f0f;
   --color-retro-yellow: #ff0;
@@ -13,12 +13,57 @@
 
 html {
   background-color: var(--color-retro-bg);
+  color-scheme: dark;
 }
 
 body {
-  background-color: var(--color-retro-bg);
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 15% -10%, rgba(255, 0, 255, 0.08), transparent 28rem),
+    radial-gradient(circle at 85% 12%, rgba(0, 255, 255, 0.06), transparent 32rem),
+    var(--color-retro-bg);
   color: #ccc;
   font-family: "Courier New", Courier, monospace;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+button,
+select,
+input {
+  font: inherit;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 1px solid var(--color-retro-cyan);
+  outline-offset: 3px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-retro-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #28303d;
 }
 
 ::selection {

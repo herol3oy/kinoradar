@@ -21,22 +21,30 @@ if (!schedule) {
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>KinoRadar - Today's Shows</title>
+		<meta name="theme-color" content="#07090d" />
+		<meta name="description" content="Warsaw cinema schedules, collected in one place." />
+		<title>KinoRadar — Warsaw cinema guide</title>
 	</head>
 	<body>
-		<nav class="border-b border-retro-border px-3 py-3">
-			<span
-				class="text-2xl font-bold tracking-widest text-retro-magenta uppercase [text-shadow:0_0_10px_var(--color-retro-magenta),0_0_30px_var(--color-retro-magenta)]"
-			>
-				KINORADAR
-			</span>
-		</nav>
-		<p class="text-gray-500 text-xs tracking-wider uppercase px-3 py-2 border-b border-retro-border">
-			Today's films from Kinoteka, Muranów, U-Jazdowski, Wisła, Atlantic,
-			Kinoluna, Kultura, Amondo, Elektronik, Cytadela, Iluzjon and
-			Kinogram:
-		</p>
-		<main>
+		<header class="border-b border-white/8 bg-retro-bg/80 backdrop-blur-xl">
+			<div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
+				<a href="/" class="group flex items-center gap-3" aria-label="KinoRadar home">
+					<span class="relative grid size-10 place-items-center border border-retro-magenta/50 bg-retro-magenta/10">
+						<span class="size-2 rounded-full bg-retro-magenta shadow-[0_0_18px_var(--color-retro-magenta)]"></span>
+						<span class="absolute inset-1 border border-retro-magenta/15"></span>
+					</span>
+					<span>
+						<span class="block text-xl font-bold tracking-[0.24em] text-white uppercase">Kino<span class="text-retro-magenta">Radar</span></span>
+						<span class="block text-[10px] tracking-[0.3em] text-gray-600 uppercase">Warsaw cinema signal</span>
+					</span>
+				</a>
+				<span class="hidden items-center gap-2 text-[10px] tracking-[0.22em] text-retro-green uppercase sm:flex">
+					<span class="size-1.5 animate-pulse rounded-full bg-retro-green shadow-[0_0_10px_var(--color-retro-green)]"></span>
+					12 cinemas online
+				</span>
+			</div>
+		</header>
+		<main class="pb-16">
 			<App
 				shows={schedule.shows}
 				updatedAt={schedule.updatedAt}
@@ -44,5 +52,8 @@ if (!schedule) {
 				client:load
 			/>
 		</main>
+		<footer class="border-t border-white/8 px-4 py-6 text-center text-[10px] tracking-[0.2em] text-gray-700 uppercase">
+			Schedules belong to their respective cinemas · Always confirm details before booking
+		</footer>
 	</body>
 </html>

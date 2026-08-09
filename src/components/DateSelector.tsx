@@ -1,18 +1,16 @@
-const DAYS = ["niedz.", "pon.", "wt.", "śr.", "czw.", "pt.", "sob."];
+const DAYS = ["Niedz.", "Pon.", "Wt.", "Śr.", "Czw.", "Pt.", "Sob."];
 
-function formatLabel(date: Date): string {
-  const dayOfWeek = DAYS[date.getDay()];
+function formatLabel(date: Date): { day: string; date: string } {
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${dayOfWeek}, ${day}.${month} [${year}-${month}-${day}]`;
+  return { day: DAYS[date.getDay()], date: `${day}.${month}` };
 }
 
 function toValue(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function getDates(): { value: string; label: string }[] {
+function getDates(): { value: string; label: { day: string; date: string } }[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return Array.from({ length: 7 }, (_, i) => {
@@ -29,22 +27,29 @@ interface Props {
 
 export default function DateSelector({ selected, onChange }: Props) {
   return (
-    <div className="mb-6">
-      <label htmlFor="film-date" className="text-sm tracking-widest uppercase text-retro-cyan mr-2">
-        [_SELECT_DATE]:
-      </label>
-      <select
-        id="film-date"
-        value={selected}
-        onChange={(e) => onChange(e.target.value)}
-        className="bg-retro-card border border-retro-border text-gray-300 text-sm px-3 py-1.5 uppercase tracking-wider focus:outline-none focus:border-retro-cyan cursor-pointer"
-      >
-        {getDates().map(({ value, label }) => (
-          <option key={value} value={value} className="bg-retro-card text-gray-300">
-            {label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <nav aria-label="Choose schedule date" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <div className="grid min-w-[620px] grid-cols-7 gap-2">
+        {getDates().map(({ value, label }, index) => {
+          const active = selected === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onChange(value)}
+              aria-pressed={active}
+              className={`group relative overflow-hidden border px-3 py-3 text-left transition-all ${
+                active
+                  ? "border-retro-cyan bg-retro-cyan/10 text-white shadow-[0_0_24px_rgba(0,255,255,0.08)]"
+                  : "border-white/8 bg-white/[0.02] text-gray-500 hover:border-white/20 hover:bg-white/[0.04] hover:text-gray-300"
+              }`}
+            >
+              {active && <span className="absolute inset-x-0 top-0 h-px bg-retro-cyan shadow-[0_0_10px_var(--color-retro-cyan)]" />}
+              <span className="block text-[10px] tracking-[0.18em] uppercase">{index === 0 ? "Today" : label.day}</span>
+              <span className={`mt-1 block text-lg font-bold ${active ? "text-retro-cyan" : "text-gray-300"}`}>{label.date}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
