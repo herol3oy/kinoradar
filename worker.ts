@@ -2,6 +2,10 @@ import { handle } from '@astrojs/cloudflare/handler';
 import { getShowsReport } from './src/server/scraper';
 import { setCachedShows } from './src/server/kv';
 import { addCalendarDays, warsawDate } from './src/lib/warsaw-date';
+import {
+  readTmdbToken,
+  refreshReleaseCatalogIfStale,
+} from './src/server/releases';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
@@ -30,12 +34,51 @@ export default {
       try {
         const result = await getShowsReport(date);
         await setCachedShows(env.SHOWTIMES, date, result.shows, result.failedCinemas);
-        console.log(`[cron] Cached ${result.shows.length} shows for ${date}`);
+        console.log(JSON.stringify({ message: 'schedule cached', date, shows: result.shows.length }));
       } catch (err) {
-        console.error(`[cron] Failed to scrape ${date}:`, err);
+        console.error(JSON.stringify({
+          message: 'schedule refresh failed',
+          date,
+          error: err instanceof Error ? err.message : String(err),
+        }));
       }
     };
 
-    ctx.waitUntil(Promise.all([scrapeAndStore(today), scrapeAndStore(tomorrow)]));
+    const refreshReleases = async () => {
+      const token = readTmdbToken(env);
+      for (const locale of ['pl', 'en'] as const) {
+        try {
+          const catalog = await refreshReleaseCatalogIfStale(
+            env.SHOWTIMES,
+            token,
+            locale,
+            today,
+          );
+          if (catalog) {
+            console.log(JSON.stringify({
+              message: 'release catalog cached',
+              locale,
+              releases: catalog.releases.length,
+            }));
+            // A complete catalog can require many paginated subrequests. Refresh
+            // at most one locale per cron invocation; the next run picks up the other.
+            return;
+          }
+        } catch (err) {
+          console.error(JSON.stringify({
+            message: 'release catalog refresh failed',
+            locale,
+            error: err instanceof Error ? err.message : String(err),
+          }));
+          return;
+        }
+      }
+    };
+
+    ctx.waitUntil(Promise.all([
+      scrapeAndStore(today),
+      scrapeAndStore(tomorrow),
+      refreshReleases(),
+    ]));
   },
-};
+} satisfies ExportedHandler<Env>;

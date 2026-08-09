@@ -108,6 +108,30 @@ export interface Translations {
     loadFailed: string;
     partialResults: string;
   };
+  releases: {
+    nav: string;
+    title: string;
+    accent: string;
+    eyebrow: string;
+    description: string;
+    filters: string;
+    search: string;
+    searchPlaceholder: string;
+    genre: string;
+    allGenres: string;
+    reset: string;
+    releaseDate: string;
+    details: string;
+    noPoster: string;
+    loading: string;
+    loadMore: string;
+    loadFailed: string;
+    retry: string;
+    empty: string;
+    emptyDescription: string;
+    stale: string;
+    attribution: string;
+  };
 }
 
 export const translations: Record<Locale, Translations> = {
@@ -233,6 +257,30 @@ export const translations: Record<Locale, Translations> = {
       loadFailed: "Nie udało się wczytać seansów. Spróbuj ponownie.",
       partialResults: "Niektórych kin nie udało się zaktualizować. Wyniki mogą być niepełne.",
     },
+    releases: {
+      nav: "Premiery",
+      title: "Nadchodzące",
+      accent: "premiery.",
+      eyebrow: "Kalendarz premier w Polsce",
+      description: "Filmy z zapowiedzianą polską premierą kinową, pogrupowane według daty.",
+      filters: "Filtry premier",
+      search: "Szukaj filmów",
+      searchPlaceholder: "Tytuł polski lub oryginalny...",
+      genre: "Gatunek",
+      allGenres: "WSZYSTKIE GATUNKI",
+      reset: "[ WYCZYŚĆ ]",
+      releaseDate: "Data premiery",
+      details: "Szczegóły filmu",
+      noPoster: "Brak plakatu",
+      loading: "Skanowanie premier",
+      loadMore: "Pokaż kolejne daty",
+      loadFailed: "Nie udało się wczytać premier.",
+      retry: "Spróbuj ponownie",
+      empty: "Brak pasujących premier",
+      emptyDescription: "Zmień lub wyczyść filtry, aby zobaczyć więcej filmów.",
+      stale: "_NIEAKTUALNE_DANE — OSTATNIA AKTUALIZACJA",
+      attribution: "Ten produkt korzysta z API TMDB, ale nie jest wspierany ani certyfikowany przez TMDB.",
+    },
   },
   en: {
     meta: {
@@ -355,6 +403,30 @@ export const translations: Record<Locale, Translations> = {
       noScreeningsDescription: "Choose another date to check upcoming screenings.",
       loadFailed: "Screenings could not be loaded. Please try again.",
       partialResults: "Some cinemas could not be updated. Results may be incomplete.",
+    },
+    releases: {
+      nav: "Releases",
+      title: "Upcoming",
+      accent: "releases.",
+      eyebrow: "Polish release calendar",
+      description: "Movies with an announced Polish theatrical release, grouped by release date.",
+      filters: "Release filters",
+      search: "Search films",
+      searchPlaceholder: "Localized or original title...",
+      genre: "Genre",
+      allGenres: "ALL GENRES",
+      reset: "[ RESET ]",
+      releaseDate: "Release date",
+      details: "Film details",
+      noPoster: "No poster",
+      loading: "Scanning releases",
+      loadMore: "Show more dates",
+      loadFailed: "Upcoming releases could not be loaded.",
+      retry: "Try again",
+      empty: "No matching releases",
+      emptyDescription: "Try changing or resetting the filters to see more films.",
+      stale: "_STALE_DATA — LAST UPDATED",
+      attribution: "This product uses the TMDB API but is not endorsed or certified by TMDB.",
     },
   },
 };

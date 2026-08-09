@@ -1,6 +1,6 @@
 # KinoRadar
 
-KinoRadar collects film schedules from independent cinemas in Warsaw and presents them in one place in Polish and English. Pick any of the next seven days, browse films grouped by cinema or film, filter for screenings with verified English audio or subtitles, and follow a ticket link to the cinema's website. Individual screening times can be starred and shared as a read-only favorites list.
+KinoRadar collects film schedules from independent cinemas in Warsaw and presents them in one place in Polish and English. Pick any of the next seven days, browse films grouped by cinema or film, filter for screenings with verified English audio or subtitles, and follow a ticket link to the cinema's website. Individual screening times can be starred and shared as a read-only favorites list. A separate calendar lists all announced Polish theatrical releases using localized TMDB metadata.
 
 The application currently aggregates:
 
@@ -44,6 +44,8 @@ flowchart LR
 
 The API accepts a `date=YYYY-MM-DD` query parameter. It checks KV first and, on a miss, scrapes all cinemas concurrently, normalizes and deduplicates the shows, stores the result for 24 hours, and returns JSON. Passing `force=1` bypasses the cache and refreshes the selected date.
 
+Upcoming releases use TMDB's Discover API with the Polish region and limited/theatrical release types. Complete Polish and English catalogs are stored separately in KV, refreshed when older than 24 hours, and retained if a later refresh fails. The page renders eight complete release-date groups at a time so titles sharing a date are never split between batches.
+
 A Cloudflare cron trigger runs every four hours and refreshes today and tomorrow in the background. This normally keeps the most frequently requested schedules warm without delaying a visitor's request.
 
 ```mermaid
@@ -86,6 +88,7 @@ KinoRadar uses Astro's server output with the Cloudflare adapter. Astro owns rou
 | Data model | Converts cinema-specific output into the common `Show` shape | `src/lib/normalize.ts` |
 | Cache | Reads and writes date-based entries with a 24-hour TTL | `src/server/kv.ts` |
 | Worker and cron | Serves Astro and preloads today and tomorrow on a schedule | `worker.ts` |
+| Upcoming releases | Fetches Polish theatrical dates from TMDB, caches localized catalogs, and serves date-grouped pages | `src/server/releases.ts`, `src/pages/api/releases.json.ts`, `src/components/UpcomingReleases.tsx` |
 | Infrastructure | Configures Astro, Cloudflare Workers, static assets, cron, and the KV binding | `astro.config.mjs`, `wrangler.jsonc` |
 
 The normalized shape shared by the server, API, and UI is:
@@ -165,6 +168,12 @@ The site is available at `http://localhost:4321` by default. Because server-rend
 npm run preview
 ```
 
+The upcoming-release calendar additionally requires a TMDB API Read Access Token. Copy the example file and replace its placeholder for local Wrangler development:
+
+```sh
+cp .dev.vars.example .dev.vars
+```
+
 Useful commands:
 
 | Command | Purpose |
@@ -191,6 +200,14 @@ GET /api/today.json?date=2026-08-09&force=1
 ```
 
 This endpoint is public. `force=1` should therefore be used carefully because every request fetches all cinema websites.
+
+Upcoming releases are available through:
+
+```http
+GET /api/releases.json?locale=pl&q=diuna&genre=878&cursor=2026-09-04
+```
+
+`locale` is required and accepts `pl` or `en`. `q` and `genre` filter the complete cached catalog before results are grouped. `cursor` is the last rendered release date and returns the next eight complete date groups. The response includes the groups, localized genre options, matching counts, the next cursor, update time, and a stale-data flag.
 
 ## Adding a cinema
 
@@ -219,7 +236,13 @@ Favorites live only in the visitor's browser; no account or backend write is req
 
 ## Deployment
 
-The production target is Cloudflare Workers. Before deploying your own instance, update the Worker name and KV namespace ID in `wrangler.jsonc`, ensure the `SHOWTIMES` binding exists, and then run:
+The production target is Cloudflare Workers. Before deploying your own instance, update the Worker name and KV namespace ID in `wrangler.jsonc`, ensure the `SHOWTIMES` binding exists, and add the TMDB token as a Worker secret:
+
+```sh
+npx wrangler secret put TMDB_API_TOKEN
+```
+
+Then deploy with:
 
 ```sh
 npm run deploy

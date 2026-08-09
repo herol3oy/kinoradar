@@ -12,31 +12,45 @@ import FavoritesNavLink from "../components/FavoritesNavLink";
 import FilmDetails from "../components/FilmDetails";
 import type { Show } from "../lib/normalize";
 import { warsawDate } from "../lib/warsaw-date";
+import UpcomingReleases from "../components/UpcomingReleases";
+import type { ReleasePageData } from "../lib/releases";
 
 interface Props {
   locale: Locale;
   cinema?: Cinema;
   favoritesPage?: boolean;
   film?: { slug: string; title: string; selectedDate: string; shows: Show[]; failedCinemas: string[] };
+  releaseCalendar?: {
+    initialPage: ReleasePageData;
+    initialQuery: string;
+    initialGenreId: number | null;
+    loadError: boolean;
+  };
 }
 
-const { locale, cinema, favoritesPage = false, film } = Astro.props;
+const { locale, cinema, favoritesPage = false, film, releaseCalendar } = Astro.props;
 const t = translations[locale];
 const otherLocale: Locale = locale === "pl" ? "en" : "pl";
-const pagePath = film ? `/${locale}/film/${film.slug}/` : favoritesPage ? `/${locale}/favorites/` : cinema ? `/${locale}/kino/${cinema.slug}/` : `/${locale}/`;
-const sharedQuery = (favoritesPage || film) ? Astro.url.search : "";
-const otherPath = film ? `/${otherLocale}/film/${film.slug}/${sharedQuery}` : favoritesPage ? `/${otherLocale}/favorites/${sharedQuery}` : cinema ? `/${otherLocale}/kino/${cinema.slug}/` : `/${otherLocale}/`;
+const releasesPath = locale === "pl" ? "/pl/premiery/" : "/en/releases/";
+const otherReleasesPath = otherLocale === "pl" ? "/pl/premiery/" : "/en/releases/";
+const pagePath = releaseCalendar ? releasesPath : film ? `/${locale}/film/${film.slug}/` : favoritesPage ? `/${locale}/favorites/` : cinema ? `/${locale}/kino/${cinema.slug}/` : `/${locale}/`;
+const sharedQuery = (favoritesPage || film || releaseCalendar) ? Astro.url.search : "";
+const otherPath = releaseCalendar ? `${otherReleasesPath}${sharedQuery}` : film ? `/${otherLocale}/film/${film.slug}/${sharedQuery}` : favoritesPage ? `/${otherLocale}/favorites/${sharedQuery}` : cinema ? `/${otherLocale}/kino/${cinema.slug}/` : `/${otherLocale}/`;
 const canonicalUrl = new URL(pagePath, Astro.site);
-const polishUrl = new URL(film ? `/pl/film/${film.slug}/` : favoritesPage ? "/pl/favorites/" : cinema ? `/pl/kino/${cinema.slug}/` : "/pl/", Astro.site);
-const englishUrl = new URL(film ? `/en/film/${film.slug}/` : favoritesPage ? "/en/favorites/" : cinema ? `/en/kino/${cinema.slug}/` : "/en/", Astro.site);
-const title = film
+const polishUrl = new URL(releaseCalendar ? "/pl/premiery/" : film ? `/pl/film/${film.slug}/` : favoritesPage ? "/pl/favorites/" : cinema ? `/pl/kino/${cinema.slug}/` : "/pl/", Astro.site);
+const englishUrl = new URL(releaseCalendar ? "/en/releases/" : film ? `/en/film/${film.slug}/` : favoritesPage ? "/en/favorites/" : cinema ? `/en/kino/${cinema.slug}/` : "/en/", Astro.site);
+const title = releaseCalendar
+  ? `${t.releases.title} ${t.releases.accent} | KinoRadar`
+  : film
   ? `${film.title} — ${t.filmPage.allScreenings} | KinoRadar`
   : favoritesPage
   ? `${t.favorites.title} | KinoRadar`
   : cinema
   ? `${cinema.label} — ${t.cinemaPage.schedule} | KinoRadar`
   : t.meta.title;
-const description = film
+const description = releaseCalendar
+  ? t.releases.description
+  : film
   ? `${film.title}: ${t.filmPage.description}`
   : favoritesPage
   ? t.favorites.description
@@ -44,7 +58,17 @@ const description = film
   ? `${cinema.label}: ${t.cinemaPage.description}`
   : t.meta.description;
 const socialImage = new URL("/og-image.png", Astro.site);
-const jsonLd = film
+const jsonLd = releaseCalendar
+  ? {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: title,
+      description,
+      url: canonicalUrl.toString(),
+      inLanguage: locale,
+      isPartOf: { "@type": "WebSite", name: "KinoRadar", url: new URL(`/${locale}/`, Astro.site).toString() },
+    }
+  : film
   ? [
       { "@context": "https://schema.org", "@type": "WebPage", name: title, description, url: canonicalUrl.toString(), inLanguage: locale },
       { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
@@ -82,7 +106,7 @@ const serializedJsonLd = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
 const today = warsawDate();
 let schedule = { schemaVersion: SCHEDULE_SCHEMA_VERSION, shows: [], updatedAt: null, failedCinemas: [] } as Awaited<ReturnType<typeof setCachedShows>>;
-if (!favoritesPage && !film) {
+if (!favoritesPage && !film && !releaseCalendar) {
   const cachedSchedule = await getCachedSchedule(env.SHOWTIMES, today);
   if (cachedSchedule) {
     schedule = cachedSchedule;
@@ -137,6 +161,14 @@ if (!favoritesPage && !film) {
           </span>
         </a>
         <div class="site-header__actions flex items-center gap-4 sm:gap-6">
+          <a
+            href={releasesPath}
+            aria-current={releaseCalendar ? "page" : undefined}
+            class:list={["flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase transition-colors hover:text-retro-cyan", releaseCalendar ? "text-retro-cyan" : "text-gray-400"]}
+          >
+            <span class="text-base" aria-hidden="true">◫</span>
+            <span class="hidden sm:inline">{t.releases.nav}</span>
+          </a>
           <FavoritesNavLink locale={locale} client:load />
           <span class="hidden items-center gap-2 text-[10px] tracking-[0.22em] text-retro-green uppercase md:flex">
             <span class="size-1.5 animate-pulse rounded-full bg-retro-green shadow-[0_0_10px_var(--color-retro-green)]"></span>
@@ -144,20 +176,29 @@ if (!favoritesPage && !film) {
           </span>
           <nav aria-label={t.header.language} class="flex border border-white/10 text-[10px] font-bold tracking-widest uppercase">
             <a href={`${pagePath}${sharedQuery}`} aria-current="page" class="bg-retro-cyan px-2.5 py-2 text-black">{locale}</a>
-            <a href={otherPath} hreflang={otherLocale} lang={otherLocale} class="px-2.5 py-2 text-gray-500 transition-colors hover:text-retro-cyan">{otherLocale}</a>
+            <a href={otherPath} data-locale-switch hreflang={otherLocale} lang={otherLocale} class="px-2.5 py-2 text-gray-500 transition-colors hover:text-retro-cyan">{otherLocale}</a>
           </nav>
         </div>
       </div>
     </header>
     <main class="pt-20 pb-16">
-      {(cinema || favoritesPage || film) && (
+      {(cinema || favoritesPage || film || releaseCalendar) && (
         <nav aria-label="Breadcrumb" class="mx-auto max-w-7xl px-4 pt-6 text-[10px] tracking-widest text-gray-600 uppercase sm:px-6 lg:px-8">
           <a href={`/${locale}/`} class="transition-colors hover:text-retro-cyan">{t.cinemaPage.home}</a>
           <span aria-hidden="true" class="px-2">/</span>
-          <span aria-current="page">{film?.title ?? (favoritesPage ? t.favorites.nav : cinema?.label)}</span>
+          <span aria-current="page">{releaseCalendar ? t.releases.nav : film?.title ?? (favoritesPage ? t.favorites.nav : cinema?.label)}</span>
         </nav>
       )}
-      {film ? (
+      {releaseCalendar ? (
+        <UpcomingReleases
+          locale={locale}
+          initialPage={releaseCalendar.initialPage}
+          initialQuery={releaseCalendar.initialQuery}
+          initialGenreId={releaseCalendar.initialGenreId}
+          loadError={releaseCalendar.loadError}
+          client:load
+        />
+      ) : film ? (
         <FilmDetails locale={locale} slug={film.slug} title={film.title} selectedDate={film.selectedDate} shows={film.shows} failedCinemas={film.failedCinemas} client:load />
       ) : (
         <App locale={locale} cinema={cinema} favoritesPage={favoritesPage} shows={schedule.shows} updatedAt={schedule.updatedAt} failedCinemas={schedule.failedCinemas} client:load />
@@ -169,6 +210,20 @@ if (!favoritesPage && !film) {
           <a href={`/${locale}/kino/${item.slug}/`} class="transition-colors hover:text-retro-cyan">{item.label}</a>
         ))}
       </nav>
+      {releaseCalendar && (
+        <div class="mx-auto mb-6 flex max-w-xl flex-col items-center gap-3 border-y border-white/8 py-5 text-center">
+          <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer" aria-label="The Movie Database">
+            <img
+              src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg"
+              alt="TMDB"
+              width="512"
+              height="369"
+              class="h-10 w-auto"
+            />
+          </a>
+          <p class="max-w-md text-[9px] leading-4 tracking-wider text-gray-600">{t.releases.attribution}</p>
+        </div>
+      )}
       <p class="text-center text-[10px] tracking-[0.2em] text-gray-700 uppercase">{t.footer}</p>
     </footer>
     <script>

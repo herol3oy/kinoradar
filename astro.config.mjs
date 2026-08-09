@@ -14,6 +14,9 @@ const locales = ['pl', 'en'];
 const seoPages = locales.flatMap((locale) => [
   `${site}/${locale}/`,
   ...cinemas.map((cinema) => `${site}/${locale}/kino/${cinema.slug}/`),
+]).concat([
+  `${site}/pl/premiery/`,
+  `${site}/en/releases/`,
 ]);
 
 // https://astro.build/config
@@ -32,10 +35,11 @@ export default defineConfig({
       serialize: (item) => {
         const url = new URL(item.url);
         const suffix = url.pathname.replace(/^\/(pl|en)/, '');
+        const isReleasePage = url.pathname === '/pl/premiery/' || url.pathname === '/en/releases/';
         item.links = [
-          { lang: 'pl', url: `${site}/pl${suffix}` },
-          { lang: 'en', url: `${site}/en${suffix}` },
-          { lang: 'x-default', url: `${site}/pl${suffix}` },
+          { lang: 'pl', url: isReleasePage ? `${site}/pl/premiery/` : `${site}/pl${suffix}` },
+          { lang: 'en', url: isReleasePage ? `${site}/en/releases/` : `${site}/en${suffix}` },
+          { lang: 'x-default', url: isReleasePage ? `${site}/pl/premiery/` : `${site}/pl${suffix}` },
         ];
         return item;
       },

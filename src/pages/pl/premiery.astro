@@ -1,0 +1,9 @@
+---
+import { env } from "cloudflare:workers";
+import HomePage from "../../layouts/HomePage.astro";
+import { loadInitialReleasePage } from "../../server/release-page";
+
+const releaseCalendar = await loadInitialReleasePage(env.SHOWTIMES, env, "pl", Astro.url);
+---
+
+<HomePage locale="pl" releaseCalendar={releaseCalendar} />
