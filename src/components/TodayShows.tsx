@@ -118,6 +118,17 @@ function CinemaCarousel({ cinema, shows }: { cinema: string; shows: Show[] }) {
 }
 
 export default function TodayShows({ shows }: Props) {
+  if (!shows.length) {
+    return (
+      <div className="border border-retro-border bg-retro-surface px-4 py-10 text-center">
+        <p className="text-sm tracking-widest text-retro-yellow uppercase">_NO_FILMS_FOUND</p>
+        <p className="mt-2 text-xs tracking-wider text-gray-500 uppercase">
+          Try changing or resetting the filters.
+        </p>
+      </div>
+    );
+  }
+
   const grouped = shows.reduce<Record<string, Show[]>>((acc, show) => {
     (acc[show.cinema] ??= []).push(show);
     return acc;
