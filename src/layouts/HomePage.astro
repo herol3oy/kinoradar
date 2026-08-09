@@ -123,19 +123,19 @@ if (!favoritesPage && !film) {
     <title>{title}</title>
   </head>
   <body>
-    <header class="border-b border-white/8 bg-retro-bg/80 backdrop-blur-xl">
-      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
-        <a href={`/${locale}/`} class="group flex items-center gap-3" aria-label={t.header.home}>
-          <span class="relative grid size-10 place-items-center border border-retro-magenta/50 bg-retro-magenta/10">
-            <span class="size-2 rounded-full bg-retro-magenta shadow-[0_0_18px_var(--color-retro-magenta)]"></span>
-            <span class="absolute inset-1 border border-retro-magenta/15"></span>
+    <header class="site-header" data-site-header>
+      <div class="site-header__inner mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <a href={`/${locale}/`} class="site-logo group flex items-center" aria-label={t.header.home}>
+          <span class="site-logo__icon relative grid place-items-center border border-retro-magenta/50 bg-retro-magenta/10">
+            <span class="site-logo__pulse rounded-full bg-retro-magenta shadow-[0_0_18px_var(--color-retro-magenta)]"></span>
+            <span class="absolute inset-1 border border-retro-magenta/15 transition-colors duration-300 group-hover:border-retro-magenta/40"></span>
           </span>
-          <span>
-            <span class="block text-xl font-bold tracking-[0.24em] text-white uppercase">Kino<span class="text-retro-magenta">Radar</span></span>
-            <span class="hidden text-[10px] tracking-[0.3em] text-gray-600 uppercase sm:block">{t.header.tagline}</span>
+          <span class="site-logo__copy">
+            <span class="site-logo__wordmark block font-bold text-white uppercase">Kino<span class="text-retro-magenta">Radar</span></span>
+            <span class="site-logo__tagline hidden text-gray-600 uppercase sm:block">{t.header.tagline}</span>
           </span>
         </a>
-        <div class="flex items-center gap-4 sm:gap-6">
+        <div class="site-header__actions flex items-center gap-4 sm:gap-6">
           <FavoritesNavLink locale={locale} client:load />
           <span class="hidden items-center gap-2 text-[10px] tracking-[0.22em] text-retro-green uppercase md:flex">
             <span class="size-1.5 animate-pulse rounded-full bg-retro-green shadow-[0_0_10px_var(--color-retro-green)]"></span>
@@ -148,7 +148,7 @@ if (!favoritesPage && !film) {
         </div>
       </div>
     </header>
-    <main class="pb-16">
+    <main class="pt-20 pb-16">
       {(cinema || favoritesPage || film) && (
         <nav aria-label="Breadcrumb" class="mx-auto max-w-7xl px-4 pt-6 text-[10px] tracking-widest text-gray-600 uppercase sm:px-6 lg:px-8">
           <a href={`/${locale}/`} class="transition-colors hover:text-retro-cyan">{t.cinemaPage.home}</a>
@@ -170,5 +170,21 @@ if (!favoritesPage && !film) {
       </nav>
       <p class="text-center text-[10px] tracking-[0.2em] text-gray-700 uppercase">{t.footer}</p>
     </footer>
+    <script>
+      const header = document.querySelector<HTMLElement>("[data-site-header]");
+      let frame: number | null = null;
+
+      const updateHeader = () => {
+        header?.toggleAttribute("data-compact", window.scrollY > 96);
+        frame = null;
+      };
+
+      const scheduleHeaderUpdate = () => {
+        if (frame === null) frame = window.requestAnimationFrame(updateHeader);
+      };
+
+      updateHeader();
+      window.addEventListener("scroll", scheduleHeaderUpdate, { passive: true });
+    </script>
   </body>
 </html>
