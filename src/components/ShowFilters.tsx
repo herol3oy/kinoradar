@@ -1,5 +1,6 @@
 export type SortMode = "cinema" | "title" | "time";
 export type ViewMode = "cinema" | "film";
+export type QuickPreset = "now" | "after-work" | "tonight";
 
 interface Props {
   cinemas: string[];
@@ -10,6 +11,7 @@ interface Props {
   startingSoon: boolean;
   sort: SortMode;
   view: ViewMode;
+  activePreset: QuickPreset | null;
   startingSoonAvailable: boolean;
   resultCount: number;
   onQueryChange: (value: string) => void;
@@ -19,6 +21,7 @@ interface Props {
   onStartingSoonChange: (value: boolean) => void;
   onSortChange: (value: SortMode) => void;
   onViewChange: (value: ViewMode) => void;
+  onPresetChange: (value: QuickPreset) => void;
   onReset: () => void;
 }
 
@@ -34,6 +37,7 @@ export default function ShowFilters({
   startingSoon,
   sort,
   view,
+  activePreset,
   startingSoonAvailable,
   resultCount,
   onQueryChange,
@@ -43,6 +47,7 @@ export default function ShowFilters({
   onStartingSoonChange,
   onSortChange,
   onViewChange,
+  onPresetChange,
   onReset,
 }: Props) {
   const hasFilters = Boolean(query || cinema || fromTime || toTime || startingSoon);
@@ -52,6 +57,36 @@ export default function ShowFilters({
       aria-label="Film filters"
       className="mb-6 border border-retro-border bg-retro-surface p-3"
     >
+      <div className="mb-3 flex flex-wrap items-center gap-2 border-b border-retro-border pb-3">
+        <span className="mr-1 text-xs tracking-widest text-retro-magenta uppercase">
+          [_WHAT_CAN_I_WATCH]
+        </span>
+        {([
+          ["now", "NEXT 2 HOURS"],
+          ["after-work", "AFTER WORK"],
+          ["tonight", "TONIGHT"],
+        ] as const).map(([preset, label]) => {
+          const disabled = preset === "now" && !startingSoonAvailable;
+          return (
+            <button
+              key={preset}
+              type="button"
+              disabled={disabled}
+              aria-pressed={activePreset === preset}
+              onClick={() => onPresetChange(preset)}
+              title={disabled ? "The next-two-hours preset is available for today only" : undefined}
+              className={`border px-3 py-1.5 text-xs tracking-widest uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
+                activePreset === preset
+                  ? "border-retro-magenta bg-retro-magenta text-black"
+                  : "border-retro-border text-gray-400 hover:border-retro-magenta hover:text-retro-magenta"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <label className="text-xs tracking-widest uppercase text-gray-500 lg:col-span-2">
           [_SEARCH_FILMS]

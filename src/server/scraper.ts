@@ -10,7 +10,12 @@ import { parseKinoelektronik, siteName as elektronikName } from '../lib/parsers/
 import { parseKinocytadela, siteName as cytadelaName } from '../lib/parsers/kinocytadela';
 import { parseIluzjon, siteName as iluzjonName } from '../lib/parsers/iluzjon';
 import { parseKinogram, siteName as kinogramName } from '../lib/parsers/kinogram';
-import { normalizeMany } from '../lib/normalize';
+import { normalizeMany, type Show } from '../lib/normalize';
+
+export type ScrapeResult = {
+  shows: Show[];
+  failedCinemas: string[];
+};
 
 const CINEMA_PARSERS = [
   { parse: parseKinoteka, name: kinotekaName, slug: 'kinoteka', label: 'Kinoteka' },
@@ -34,7 +39,7 @@ function normalizeDate(date?: string): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export async function getTodayShows(date?: string) {
+export async function getShowsReport(date?: string): Promise<ScrapeResult> {
   const day = normalizeDate(date);
 
   const results = await Promise.allSettled(
@@ -42,6 +47,7 @@ export async function getTodayShows(date?: string) {
   );
 
   const all: any[] = [];
+  const failedCinemas: string[] = [];
 
   results.forEach((result, index) => {
     const cinema = CINEMA_PARSERS[index];
@@ -49,6 +55,7 @@ export async function getTodayShows(date?: string) {
     if (result.status === 'fulfilled') {
       all.push(...normalizeMany(result.value, cinema.name, cinema.slug));
     } else {
+      failedCinemas.push(cinema.label);
       console.error(`${cinema.label} parser error:`, result.reason);
     }
   });
@@ -61,5 +68,9 @@ export async function getTodayShows(date?: string) {
     return true;
   });
 
-  return deduped;
+  return { shows: deduped, failedCinemas };
+}
+
+export async function getTodayShows(date?: string): Promise<Show[]> {
+  return (await getShowsReport(date)).shows;
 }

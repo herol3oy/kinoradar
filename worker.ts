@@ -1,5 +1,5 @@
 import { handle } from '@astrojs/cloudflare/handler';
-import { getTodayShows } from './src/server/scraper';
+import { getShowsReport } from './src/server/scraper';
 import { setCachedShows } from './src/server/kv';
 
 function normalizeDate(date?: string): string {
@@ -18,9 +18,9 @@ export default {
 
     const scrapeAndStore = async (date: string) => {
       try {
-        const shows = await getTodayShows(date);
-        await setCachedShows(env.SHOWTIMES, date, shows);
-        console.log(`[cron] Cached ${shows.length} shows for ${date}`);
+        const result = await getShowsReport(date);
+        await setCachedShows(env.SHOWTIMES, date, result.shows, result.failedCinemas);
+        console.log(`[cron] Cached ${result.shows.length} shows for ${date}`);
       } catch (err) {
         console.error(`[cron] Failed to scrape ${date}:`, err);
       }

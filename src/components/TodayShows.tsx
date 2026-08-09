@@ -6,6 +6,7 @@ import type { ViewMode } from "./ShowFilters";
 interface Props {
   shows: Show[];
   view: ViewMode;
+  emptyMessage?: string;
 }
 
 function normalizeTitle(title: string): string {
@@ -136,13 +137,13 @@ function ShowCarousel({
   );
 }
 
-export default function TodayShows({ shows, view }: Props) {
+export default function TodayShows({ shows, view, emptyMessage }: Props) {
   if (!shows.length) {
     return (
       <div className="border border-retro-border bg-retro-surface px-4 py-10 text-center">
         <p className="text-sm tracking-widest text-retro-yellow uppercase">_NO_FILMS_FOUND</p>
         <p className="mt-2 text-xs tracking-wider text-gray-500 uppercase">
-          Try changing or resetting the filters.
+          {emptyMessage ?? "Try changing or resetting the filters."}
         </p>
       </div>
     );
