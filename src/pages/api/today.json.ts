@@ -3,6 +3,7 @@ import { env } from 'cloudflare:workers';
 import { getCachedSchedule } from '../../server/kv';
 import { getShowsReport } from '../../server/scraper';
 import { setCachedShows } from '../../server/kv';
+import { normalizeWarsawDate } from '../../lib/warsaw-date';
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
@@ -11,9 +12,7 @@ export const GET: APIRoute = async ({ request }) => {
   const includeMeta = url.searchParams.get('meta') === '1';
 
   try {
-    const day = date && /^\d{4}-\d{2}-\d{2}$/.test(date)
-      ? date
-      : new Date().toISOString().slice(0, 10);
+    const day = normalizeWarsawDate(date);
 
     if (!force) {
       const cached = await getCachedSchedule(env.SHOWTIMES, day);
@@ -28,7 +27,7 @@ export const GET: APIRoute = async ({ request }) => {
       }
     }
 
-    const result = await getShowsReport(date);
+    const result = await getShowsReport(day);
     const data = await setCachedShows(env.SHOWTIMES, day, result.shows, result.failedCinemas);
 
     return new Response(JSON.stringify(includeMeta ? data : data.shows), {

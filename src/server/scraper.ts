@@ -12,6 +12,7 @@ import { parseIluzjon, siteName as iluzjonName } from '../lib/parsers/iluzjon';
 import { parseKinogram, siteName as kinogramName } from '../lib/parsers/kinogram';
 import { normalizeMany, type Show } from '../lib/normalize';
 import { cinemas } from '../data/cinemas';
+import { normalizeWarsawDate } from '../lib/warsaw-date';
 
 export type ScrapeResult = {
   shows: Show[];
@@ -33,15 +34,8 @@ const CINEMA_PARSERS = [
   { ...cinemas[11], parse: parseKinogram, name: kinogramName },
 ];
 
-function normalizeDate(date?: string): string {
-  if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return date;
-  }
-  return new Date().toISOString().slice(0, 10);
-}
-
 export async function getShowsReport(date?: string): Promise<ScrapeResult> {
-  const day = normalizeDate(date);
+  const day = normalizeWarsawDate(date);
 
   const results = await Promise.allSettled(
     CINEMA_PARSERS.map((cinema) => cinema.parse(day))

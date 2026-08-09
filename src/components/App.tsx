@@ -12,6 +12,7 @@ import type { Cinema } from "../data/cinemas";
 import { favoriteKey } from "../lib/favorites";
 import { useFavorites } from "../lib/useFavorites";
 import FavoritesPage from "./FavoritesPage";
+import { warsawDate, warsawTimeMinutes } from "../lib/warsaw-date";
 
 interface Props {
   locale: Locale;
@@ -50,7 +51,7 @@ export default function App({
   favoritesPage = false,
 }: Props) {
   const t = translations[locale];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = warsawDate();
   const [selectedDate, setSelectedDate] = useState(today);
   const [shows, setShows] = useState<Show[]>(initialShows);
   const [loading, setLoading] = useState(false);
@@ -77,8 +78,7 @@ export default function App({
     const normalizedQuery = normalizeSearch(query.trim());
     const from = fromTime ? toMinutes(fromTime) : null;
     const until = toTime ? toMinutes(toTime) : null;
-    const now = new Date();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const nowMinutes = warsawTimeMinutes();
     const soonLimit = nowMinutes + 120;
     const hasTimeFilter = from !== null || until !== null || startingSoon;
 

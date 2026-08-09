@@ -1,22 +1,11 @@
 import { translations, type Locale } from "../i18n/translations";
-
-function formatLabel(date: Date, days: string[]): { day: string; date: string } {
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  return { day: days[date.getDay()], date: `${day}.${month}` };
-}
-
-function toValue(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
+import { warsawDateRange } from "../lib/warsaw-date";
 
 function getDates(days: string[]): { value: string; label: { day: string; date: string } }[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    return { value: toValue(d), label: formatLabel(d, days) };
+  return warsawDateRange(7).map((value) => {
+    const [, month, day] = value.split("-");
+    const weekday = new Date(`${value}T00:00:00Z`).getUTCDay();
+    return { value, label: { day: days[weekday], date: `${day}.${month}` } };
   });
 }
 

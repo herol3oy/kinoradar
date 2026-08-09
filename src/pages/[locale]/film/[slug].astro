@@ -5,18 +5,16 @@ import { locales, type Locale } from "../../../i18n/translations";
 import { showsForFilm } from "../../../lib/film";
 import { getCachedSchedule, setCachedShows } from "../../../server/kv";
 import { getShowsReport } from "../../../server/scraper";
+import { warsawDateRange } from "../../../lib/warsaw-date";
 
 const localeParam = Astro.params.locale;
 const locale = locales.includes(localeParam as Locale) ? localeParam as Locale : undefined;
 const slug = Astro.params.slug;
 if (!locale || !slug || !/^[\p{Letter}\p{Number}-]+$/u.test(slug)) return new Response("Not found", { status: 404 });
 
-const today = new Date().toISOString().slice(0, 10);
-const allowedDates = new Set(Array.from({ length: 7 }, (_, index) => {
-  const date = new Date(`${today}T12:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + index);
-  return date.toISOString().slice(0, 10);
-}));
+const dates = warsawDateRange(7);
+const today = dates[0];
+const allowedDates = new Set(dates);
 const requestedDate = Astro.url.searchParams.get("date");
 const selectedDate = requestedDate && allowedDates.has(requestedDate) ? requestedDate : today;
 

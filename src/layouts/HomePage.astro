@@ -11,6 +11,7 @@ import { cinemas, type Cinema } from "../data/cinemas";
 import FavoritesNavLink from "../components/FavoritesNavLink";
 import FilmDetails from "../components/FilmDetails";
 import type { Show } from "../lib/normalize";
+import { warsawDate } from "../lib/warsaw-date";
 
 interface Props {
   locale: Locale;
@@ -79,7 +80,7 @@ const jsonLd = film
     };
 const serializedJsonLd = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
-const today = new Date().toISOString().slice(0, 10);
+const today = warsawDate();
 let schedule = { shows: [], updatedAt: null, failedCinemas: [] } as Awaited<ReturnType<typeof setCachedShows>>;
 if (!favoritesPage && !film) {
   const cachedSchedule = await getCachedSchedule(env.SHOWTIMES, today);
