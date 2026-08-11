@@ -1,7 +1,7 @@
 import {
   normalizeScreeningLanguage,
   parseScreeningTitle,
-  screeningFingerprint,
+  screeningIdentity,
   type Screening,
   type ScreeningLanguage,
 } from './screening-language.ts';
@@ -30,7 +30,7 @@ export type Show = {
 function dedupeScreenings(screenings: Screening[]): Screening[] {
   const unique = new Map<string, Screening>();
   screenings.forEach((screening) => {
-    const key = screeningFingerprint(screening);
+    const key = screeningIdentity(screening);
     const existing = unique.get(key);
     if (!existing) {
       unique.set(key, screening);
@@ -52,6 +52,8 @@ function normalizeRawScreening(
     time,
     ...normalizeScreeningLanguage(raw, fallbackLanguage),
     ...(raw.link || fallbackLink ? { link: raw.link || fallbackLink } : {}),
+    ...(raw.providerRef ? { providerRef: raw.providerRef } : {}),
+    ...(raw.presentation ? { presentation: raw.presentation } : {}),
   };
 }
 

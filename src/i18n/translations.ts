@@ -68,6 +68,14 @@ export interface Translations {
     subtitled: string;
     dubbed: string;
   };
+  ticketAvailability: {
+    loading: string;
+    from: string;
+    booked: string;
+    prices: string;
+    priceUnavailable: string;
+    soldOut: string;
+  };
   footer: string;
   cinemaPage: {
     eyebrow: string;
@@ -217,6 +225,14 @@ export const translations: Record<Locale, Translations> = {
       subtitled: "napisy",
       dubbed: "dubbing",
     },
+    ticketAvailability: {
+      loading: "Sprawdzanie cen i rezerwacji",
+      from: "od",
+      booked: "zarezerwowane miejsca",
+      prices: "Ceny biletów",
+      priceUnavailable: "Cena niedostępna",
+      soldOut: "Brak miejsc",
+    },
     footer: "Repertuary należą do poszczególnych kin · Zawsze potwierdź szczegóły przed zakupem",
     cinemaPage: {
       eyebrow: "Kino w Warszawie",
@@ -363,6 +379,14 @@ export const translations: Record<Locale, Translations> = {
       subtitles: "subtitles",
       subtitled: "subtitled",
       dubbed: "dubbed",
+    },
+    ticketAvailability: {
+      loading: "Checking prices and bookings",
+      from: "from",
+      booked: "booked",
+      prices: "Ticket prices",
+      priceUnavailable: "Price unavailable",
+      soldOut: "Sold out",
     },
     footer: "Schedules belong to their respective cinemas · Always confirm details before booking",
     cinemaPage: {

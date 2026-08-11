@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { countLabel, translations, type Locale } from "../i18n/translations";
 import type { Show } from "../lib/normalize";
-import { screeningFingerprint, type Screening } from "../lib/screening-language";
+import { screeningIdentity, type Screening } from "../lib/screening-language";
 import { favoriteKey } from "../lib/favorites";
 import { filmSlug } from "../lib/film";
 import type { ViewMode } from "./ShowFilters";
@@ -126,7 +126,7 @@ function ShowCarousel({
                       <div className="mb-5 flex flex-wrap gap-1.5">
                         {show.screenings.map((screening, j) => {
                           const isFavorite = favoriteKeys.has(favoriteKey(show.canonicalTitle, selectedDate, screening.time, show.cinema, screening, show.source));
-                          return <div key={`${screeningFingerprint(screening)}-${j}`} className="space-y-1">
+                          return <div key={`${screeningIdentity(screening)}-${j}`} className="space-y-1">
                             <div className={`flex items-center border ${isFavorite ? "border-retro-yellow bg-retro-yellow/10" : "border-retro-yellow/20 bg-retro-yellow/5"}`}>
                               <button
                                 type="button"

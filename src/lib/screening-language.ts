@@ -5,9 +5,23 @@ export type ScreeningLanguage = {
   dubbed?: boolean;
 };
 
+export type ScreeningProviderRef = {
+  provider: "kinoteka";
+  screeningId: string;
+};
+
+export type ScreeningPresentation = {
+  printType?: string;
+  soundType?: string;
+  format?: string;
+  screenFeatures?: string[];
+};
+
 export type Screening = ScreeningLanguage & {
   time: string;
   link?: string;
+  providerRef?: ScreeningProviderRef;
+  presentation?: ScreeningPresentation;
 };
 
 export type ParsedScreeningTitle = {
@@ -99,8 +113,13 @@ export function screeningFingerprint(screening: Screening): string {
   return `${screening.time.trim()}|${screening.audioLanguage ?? ""}|${subtitles}|${subtitled}|${dubbed}`;
 }
 
+export function screeningIdentity(screening: Screening): string {
+  return screening.providerRef
+    ? `${screening.providerRef.provider}:${screening.providerRef.screeningId}`
+    : screeningFingerprint(screening);
+}
+
 export function isEnglishFriendly(screening: Screening): boolean {
   return screening.audioLanguage === "en"
     || screening.subtitleLanguages?.includes("en") === true;
 }
-
