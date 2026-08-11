@@ -18,9 +18,22 @@
 		{
 			"binding": "SHOWTIMES",
 			"id": "6df48bd63e8842879f5910d30e2a29c0"
+		},
+		{
+			"id": "d3f59b02ab94466590bf206a7a436ae3",
+			"binding": "SESSION"
 		}
 	],
 	"observability": {
 		"enabled": true
-	}
+	},
+	"routes": [
+		{
+			"pattern": "kinoradar.pl",
+			"zone_name": "kinoradar.pl",
+			"custom_domain": true,
+			"enabled": true,
+			"previews_enabled": false
+		}
+	]
 }
