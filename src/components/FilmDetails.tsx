@@ -4,6 +4,7 @@ import { favoriteFilmKey, favoriteKey } from "../lib/favorites";
 import { showsForFilm } from "../lib/film";
 import type { Show } from "../lib/normalize";
 import type { KinotekaLiveScreening } from "../lib/kinoteka";
+import type { NovekinoLiveScreening } from "../lib/novekino";
 import { screeningIdentity, type Screening } from "../lib/screening-language";
 import { useFavorites } from "../lib/useFavorites";
 import DateSelector from "./DateSelector";
@@ -26,8 +27,12 @@ type Props = {
 
 type LiveLookupState =
   | { status: "loading" }
-  | { status: "loaded"; data: KinotekaLiveScreening }
+  | { status: "loaded"; data: KinotekaLiveScreening | NovekinoLiveScreening }
   | { status: "failed" };
+
+function liveScreeningKey(provider: "kinoteka" | "novekino", screeningId: string): string {
+  return `${provider}:${screeningId}`;
+}
 
 function timeValue(time: string): number {
   const match = time.match(/(?:^|\D)([01]?\d|2[0-3])[:.]([0-5]\d)(?:\D|$)/);
@@ -48,22 +53,29 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
   const kinotekaIds = [...new Set(shows.flatMap((show) => show.screenings.flatMap((screening) =>
     screening.providerRef?.provider === "kinoteka" ? [screening.providerRef.screeningId] : [],
   )))];
-  const kinotekaIdsKey = kinotekaIds.join(",");
+  const novekinoIds = [...new Set(shows.flatMap((show) => show.screenings.flatMap((screening) =>
+    screening.providerRef?.provider === "novekino" ? [screening.providerRef.screeningId] : [],
+  )))];
+  const liveIdsKey = `kinoteka:${kinotekaIds.join(",")}|novekino:${novekinoIds.join(",")}`;
 
   useEffect(() => {
-    if (!kinotekaIds.length) {
+    if (!kinotekaIds.length && !novekinoIds.length) {
       setLiveScreenings({});
       return;
     }
 
     const controller = new AbortController();
     let nextIndex = 0;
-    setLiveScreenings(Object.fromEntries(kinotekaIds.map((id) => [id, { status: "loading" as const }])));
+    setLiveScreenings(Object.fromEntries([
+      ...kinotekaIds.map((id) => [liveScreeningKey("kinoteka", id), { status: "loading" as const }]),
+      ...novekinoIds.map((id) => [liveScreeningKey("novekino", id), { status: "loading" as const }]),
+    ]));
 
-    const worker = async () => {
+    const kinotekaWorker = async () => {
       while (!controller.signal.aborted) {
         const screeningId = kinotekaIds[nextIndex++];
         if (!screeningId) return;
+        const key = liveScreeningKey("kinoteka", screeningId);
         try {
           const response = await fetch(`/api/kinoteka/screening/${encodeURIComponent(screeningId)}.json`, {
             signal: controller.signal,
@@ -73,19 +85,56 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
           const data = await response.json() as KinotekaLiveScreening;
           if (data.screeningId !== screeningId || !Array.isArray(data.offers)) throw new Error("invalid live screening response");
           if (!controller.signal.aborted) {
-            setLiveScreenings((current) => ({ ...current, [screeningId]: { status: "loaded", data } }));
+            setLiveScreenings((current) => ({ ...current, [key]: { status: "loaded", data } }));
           }
         } catch (error) {
           if (!controller.signal.aborted && !(error instanceof DOMException && error.name === "AbortError")) {
-            setLiveScreenings((current) => ({ ...current, [screeningId]: { status: "failed" } }));
+            setLiveScreenings((current) => ({ ...current, [key]: { status: "failed" } }));
           }
         }
       }
     };
 
-    void Promise.all(Array.from({ length: Math.min(4, kinotekaIds.length) }, worker));
+    const loadNovekino = async () => {
+      if (!novekinoIds.length) return;
+      try {
+        const response = await fetch(`/api/novekino/screenings.json?ids=${encodeURIComponent(novekinoIds.join(","))}`, {
+          signal: controller.signal,
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) throw new Error("live screening request failed");
+        const data = await response.json() as NovekinoLiveScreening[];
+        if (!Array.isArray(data)) throw new Error("invalid live screening response");
+        const byId = new Map(data.map((screening) => [screening.screeningId, screening]));
+        if (!controller.signal.aborted) {
+          setLiveScreenings((current) => {
+            const next = { ...current };
+            novekinoIds.forEach((id) => {
+              const screening = byId.get(id);
+              next[liveScreeningKey("novekino", id)] = screening
+                ? { status: "loaded", data: screening }
+                : { status: "failed" };
+            });
+            return next;
+          });
+        }
+      } catch (error) {
+        if (!controller.signal.aborted && !(error instanceof DOMException && error.name === "AbortError")) {
+          setLiveScreenings((current) => {
+            const next = { ...current };
+            novekinoIds.forEach((id) => { next[liveScreeningKey("novekino", id)] = { status: "failed" }; });
+            return next;
+          });
+        }
+      }
+    };
+
+    void Promise.all([
+      ...Array.from({ length: Math.min(4, kinotekaIds.length) }, kinotekaWorker),
+      loadNovekino(),
+    ]);
     return () => controller.abort();
-  }, [kinotekaIdsKey]);
+  }, [liveIdsKey]);
 
   const groups = new Map<string, Array<{ screening: Screening; show: Show }>>();
   shows.forEach((show) => {
@@ -166,7 +215,13 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
                       {screening.link && <a href={screening.link} target="_blank" rel="noopener noreferrer" aria-label={`${t.shows.buyTickets}: ${show.canonicalTitle}, ${cinema}, ${screening.time}`} className="border-l border-white/10 px-2.5 py-2 text-xs text-retro-green hover:text-retro-cyan">↗</a>}
                     </div>
                     <ScreeningBadges locale={locale} screening={screening} />
-                    <KinotekaLiveDetails locale={locale} screening={screening} state={screening.providerRef ? liveScreenings[screening.providerRef.screeningId] : undefined} />
+                    <ScreeningLiveDetails
+                      locale={locale}
+                      screening={screening}
+                      state={screening.providerRef
+                        ? liveScreenings[liveScreeningKey(screening.providerRef.provider, screening.providerRef.screeningId)]
+                        : undefined}
+                    />
                   </div>;
                 })}
               </div>
@@ -178,7 +233,10 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
   );
 }
 
-function KinotekaLiveDetails({ locale, screening, state }: { locale: Locale; screening: Screening; state?: LiveLookupState }) {
+function ScreeningLiveDetails({ locale, screening, state }: { locale: Locale; screening: Screening; state?: LiveLookupState }) {
+  if (screening.providerRef?.provider === "novekino") {
+    return <NovekinoLiveDetails locale={locale} state={state} />;
+  }
   if (screening.providerRef?.provider !== "kinoteka") return null;
   const t = translations[locale].ticketAvailability;
 
@@ -189,7 +247,7 @@ function KinotekaLiveDetails({ locale, screening, state }: { locale: Locale; scr
     return <p className="text-[9px] tracking-wide text-gray-600">{t.priceUnavailable}</p>;
   }
 
-  const { data } = state;
+  const data = state.data as KinotekaLiveScreening;
   const price = (value: number) => new Intl.NumberFormat(locale, {
     style: "currency",
     currency: data.currency,
@@ -221,6 +279,28 @@ function KinotekaLiveDetails({ locale, screening, state }: { locale: Locale; scr
       </div>
     </details>
   );
+}
+
+function NovekinoLiveDetails({ locale, state }: { locale: Locale; state?: LiveLookupState }) {
+  const t = translations[locale].ticketAvailability;
+  if (!state || state.status === "loading") {
+    return <p className="max-w-44 text-[9px] leading-4 tracking-wide text-gray-600">{t.checkingAvailability}…</p>;
+  }
+  if (state.status === "failed") {
+    return <p className="text-[9px] tracking-wide text-gray-600">{t.availabilityUnavailable}</p>;
+  }
+
+  const data = state.data as NovekinoLiveScreening;
+  const summary = data.soldOut
+    ? t.soldOut
+    : !data.saleEnabled
+      ? t.saleUnavailable
+      : data.seatsLeft !== null
+        ? `${data.seatsLeft} ${t.seatsAvailable}`
+        : t.availabilityUnavailable;
+  return <p className={`max-w-48 text-[9px] leading-4 tracking-wide ${data.soldOut ? "text-retro-magenta" : "text-retro-cyan"}`}>
+    {summary}
+  </p>;
 }
 
 function Empty({ title, message }: { title: string; message: string }) {

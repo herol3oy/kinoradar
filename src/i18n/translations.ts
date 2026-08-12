@@ -70,10 +70,14 @@ export interface Translations {
   };
   ticketAvailability: {
     loading: string;
+    checkingAvailability: string;
     from: string;
     booked: string;
     prices: string;
     priceUnavailable: string;
+    availabilityUnavailable: string;
+    seatsAvailable: string;
+    saleUnavailable: string;
     soldOut: string;
   };
   footer: string;
@@ -227,10 +231,14 @@ export const translations: Record<Locale, Translations> = {
     },
     ticketAvailability: {
       loading: "Sprawdzanie cen i rezerwacji",
+      checkingAvailability: "Sprawdzanie dostępności",
       from: "od",
       booked: "zarezerwowane miejsca",
       prices: "Ceny biletów",
       priceUnavailable: "Cena niedostępna",
+      availabilityUnavailable: "Dostępność niedostępna",
+      seatsAvailable: "wolnych miejsc",
+      saleUnavailable: "Sprzedaż niedostępna",
       soldOut: "Brak miejsc",
     },
     footer: "Repertuary należą do poszczególnych kin · Zawsze potwierdź szczegóły przed zakupem",
@@ -382,10 +390,14 @@ export const translations: Record<Locale, Translations> = {
     },
     ticketAvailability: {
       loading: "Checking prices and bookings",
+      checkingAvailability: "Checking availability",
       from: "from",
       booked: "booked",
       prices: "Ticket prices",
       priceUnavailable: "Price unavailable",
+      availabilityUnavailable: "Availability unavailable",
+      seatsAvailable: "seats available",
+      saleUnavailable: "Sales unavailable",
       soldOut: "Sold out",
     },
     footer: "Schedules belong to their respective cinemas · Always confirm details before booking",

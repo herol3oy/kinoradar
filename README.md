@@ -82,7 +82,7 @@ KinoRadar uses Astro's server output with the Cloudflare adapter. Astro owns rou
 | Client UI | Selects a date, fetches new data, groups shows by cinema, and renders carousels | `src/components/` |
 | Favorites | Stores up to 20 film, cinema, date, and time combinations in the browser and encodes read-only shared lists in the URL | `src/lib/favorites.ts`, `src/lib/useFavorites.ts`, `src/components/FavoritesPage.tsx` |
 | Film pages | Resolves a normalized title slug and aggregates all cinema times for the selected date | `src/pages/[locale]/film/[slug].astro`, `src/components/FilmDetails.tsx` |
-| JSON API | Validates the requested date and implements cache-first retrieval | `src/pages/api/today.json.ts` |
+| JSON APIs | Serve cache-first schedules and bounded live ticket availability | `src/pages/api/` |
 | Scraping | Runs cinema parsers concurrently, tolerates individual failures, normalizes results, and removes duplicates | `src/server/scraper.ts` |
 | Cinema adapters | Fetch and extract schedules from each cinema's website | `src/lib/parsers/` |
 | Data model | Converts cinema-specific output into the common `Show` shape | `src/lib/normalize.ts` |
@@ -112,9 +112,21 @@ type Show = {
     subtitleLanguages?: string[];
     subtitled?: boolean;
     dubbed?: boolean;
+    providerRef?: {
+      provider: "kinoteka" | "novekino";
+      screeningId: string;
+    };
+    presentation?: {
+      printType?: string;
+      soundType?: string;
+      format?: string;
+      screenFeatures?: string[];
+    };
   }>;
 };
 ```
+
+Kino Wisła uses NoveKino's public ticketing JSON as its primary schedule source. This adds event-specific purchase links, ticketing poster images, version and presentation metadata, and provider screening IDs. If that undocumented feed is unavailable or malformed, the adapter falls back to the cinema's public HTML repertoire and extracts the same event IDs where possible.
 
 Language codes are normalized to lowercase ISO 639-1 values. Missing language fields mean that the source did not provide verified information; KinoRadar does not guess. Generic `napisy` and `dubbing` labels are retained as generic badges. A screening is included by the English-friendly filter only when English audio or English subtitles are explicit.
 
@@ -208,6 +220,14 @@ GET /api/releases.json?locale=pl&q=diuna&genre=878&cursor=2026-09-04
 ```
 
 `locale` is required and accepts `pl` or `en`. `q` and `genre` filter the complete cached catalog before results are grouped. `cursor` is the last rendered release date and returns the next eight complete date groups. The response includes the groups, localized genre options, matching counts, the next cursor, update time, and a stale-data flag.
+
+Film pages request live Kino Wisła availability in one bounded batch:
+
+```http
+GET /api/novekino/screenings.json?ids=114029,114030
+```
+
+The endpoint accepts up to 20 unique numeric event IDs and returns remaining seats, capacity, sale state, and sold-out state for matching events. It performs one read-only repertoire request, never starts checkout or reserves seats, and caches successful responses publicly for 30 seconds. Ticket prices are not exposed because NoveKino's price flow is session-based.
 
 ## Adding a cinema
 

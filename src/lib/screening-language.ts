@@ -6,7 +6,7 @@ export type ScreeningLanguage = {
 };
 
 export type ScreeningProviderRef = {
-  provider: "kinoteka";
+  provider: "kinoteka" | "novekino";
   screeningId: string;
 };
 
