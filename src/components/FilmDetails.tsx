@@ -4,7 +4,8 @@ import { favoriteFilmKey, favoriteKey } from "../lib/favorites";
 import { showsForFilm } from "../lib/film";
 import type { Show } from "../lib/normalize";
 import type { KinotekaLiveScreening } from "../lib/kinoteka";
-import { NOVEKINO_CINEMAS, type NovekinoCinema, type NovekinoLiveScreening } from "../lib/novekino";
+import type { MsiLiveScreening } from "../lib/msi";
+import { NOVEKINO_CINEMAS, type NovekinoCinema } from "../lib/novekino";
 import { screeningIdentity, type Screening, type ScreeningProviderRef } from "../lib/screening-language";
 import { useFavorites } from "../lib/useFavorites";
 import DateSelector from "./DateSelector";
@@ -27,17 +28,18 @@ type Props = {
 
 type LiveLookupState =
   | { status: "loading" }
-  | { status: "loaded"; data: KinotekaLiveScreening | NovekinoLiveScreening }
+  | { status: "loaded"; data: KinotekaLiveScreening | MsiLiveScreening }
   | { status: "failed" };
 
-function liveScreeningKey(provider: "kinoteka" | "novekino", screeningId: string, cinema?: NovekinoCinema): string {
+function liveScreeningKey(provider: "kinoteka" | "kinokultura" | "novekino", screeningId: string, cinema?: NovekinoCinema): string {
   return provider === "novekino" ? `${provider}:${cinema}:${screeningId}` : `${provider}:${screeningId}`;
 }
 
 function providerLiveScreeningKey(providerRef: ScreeningProviderRef): string {
-  return providerRef.provider === "novekino"
-    ? liveScreeningKey("novekino", providerRef.screeningId, providerRef.cinema)
-    : liveScreeningKey("kinoteka", providerRef.screeningId);
+  if (providerRef.provider === "novekino") {
+    return liveScreeningKey("novekino", providerRef.screeningId, providerRef.cinema);
+  }
+  return liveScreeningKey(providerRef.provider, providerRef.screeningId);
 }
 
 function timeValue(time: string): number {
@@ -59,6 +61,9 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
   const kinotekaIds = [...new Set(shows.flatMap((show) => show.screenings.flatMap((screening) =>
     screening.providerRef?.provider === "kinoteka" ? [screening.providerRef.screeningId] : [],
   )))];
+  const kinokulturaIds = [...new Set(shows.flatMap((show) => show.screenings.flatMap((screening) =>
+    screening.providerRef?.provider === "kinokultura" ? [screening.providerRef.screeningId] : [],
+  )))];
   const novekinoIdsByCinema = Object.fromEntries(NOVEKINO_CINEMAS.map((cinema) => [
     cinema,
     [...new Set(shows.flatMap((show) => show.screenings.flatMap((screening) =>
@@ -69,11 +74,13 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
   ])) as Record<NovekinoCinema, string[]>;
   const liveIdsKey = [
     `kinoteka:${kinotekaIds.join(",")}`,
+    `kinokultura:${kinokulturaIds.join(",")}`,
     ...NOVEKINO_CINEMAS.map((cinema) => `novekino:${cinema}:${novekinoIdsByCinema[cinema].join(",")}`),
   ].join("|");
 
   useEffect(() => {
-    if (!kinotekaIds.length && NOVEKINO_CINEMAS.every((cinema) => !novekinoIdsByCinema[cinema].length)) {
+    if (!kinotekaIds.length && !kinokulturaIds.length
+      && NOVEKINO_CINEMAS.every((cinema) => !novekinoIdsByCinema[cinema].length)) {
       setLiveScreenings({});
       return;
     }
@@ -82,6 +89,7 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
     let nextIndex = 0;
     setLiveScreenings(Object.fromEntries([
       ...kinotekaIds.map((id) => [liveScreeningKey("kinoteka", id), { status: "loading" as const }]),
+      ...kinokulturaIds.map((id) => [liveScreeningKey("kinokultura", id), { status: "loading" as const }]),
       ...NOVEKINO_CINEMAS.flatMap((cinema) => novekinoIdsByCinema[cinema].map((id) => [
         liveScreeningKey("novekino", id, cinema),
         { status: "loading" as const },
@@ -121,7 +129,7 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
           headers: { Accept: "application/json" },
         });
         if (!response.ok) throw new Error("live screening request failed");
-        const data = await response.json() as NovekinoLiveScreening[];
+        const data = await response.json() as MsiLiveScreening[];
         if (!Array.isArray(data)) throw new Error("invalid live screening response");
         const byId = new Map(data.map((screening) => [screening.screeningId, screening]));
         if (!controller.signal.aborted) {
@@ -147,9 +155,44 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
       }
     };
 
+    const loadKinokultura = async () => {
+      if (!kinokulturaIds.length) return;
+      try {
+        const response = await fetch(`/api/kinokultura/screenings.json?ids=${encodeURIComponent(kinokulturaIds.join(","))}`, {
+          signal: controller.signal,
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) throw new Error("live screening request failed");
+        const data = await response.json() as MsiLiveScreening[];
+        if (!Array.isArray(data)) throw new Error("invalid live screening response");
+        const byId = new Map(data.map((screening) => [screening.screeningId, screening]));
+        if (!controller.signal.aborted) {
+          setLiveScreenings((current) => {
+            const next = { ...current };
+            kinokulturaIds.forEach((id) => {
+              const screening = byId.get(id);
+              next[liveScreeningKey("kinokultura", id)] = screening
+                ? { status: "loaded", data: screening }
+                : { status: "failed" };
+            });
+            return next;
+          });
+        }
+      } catch (error) {
+        if (!controller.signal.aborted && !(error instanceof DOMException && error.name === "AbortError")) {
+          setLiveScreenings((current) => {
+            const next = { ...current };
+            kinokulturaIds.forEach((id) => { next[liveScreeningKey("kinokultura", id)] = { status: "failed" }; });
+            return next;
+          });
+        }
+      }
+    };
+
     void Promise.all([
       ...Array.from({ length: Math.min(4, kinotekaIds.length) }, kinotekaWorker),
       ...NOVEKINO_CINEMAS.map(loadNovekino),
+      loadKinokultura(),
     ]);
     return () => controller.abort();
   }, [liveIdsKey]);
@@ -252,8 +295,8 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
 }
 
 function ScreeningLiveDetails({ locale, screening, state }: { locale: Locale; screening: Screening; state?: LiveLookupState }) {
-  if (screening.providerRef?.provider === "novekino") {
-    return <NovekinoLiveDetails locale={locale} state={state} />;
+  if (screening.providerRef?.provider === "novekino" || screening.providerRef?.provider === "kinokultura") {
+    return <MsiLiveDetails locale={locale} state={state} />;
   }
   if (screening.providerRef?.provider !== "kinoteka") return null;
   const t = translations[locale].ticketAvailability;
@@ -299,7 +342,7 @@ function ScreeningLiveDetails({ locale, screening, state }: { locale: Locale; sc
   );
 }
 
-function NovekinoLiveDetails({ locale, state }: { locale: Locale; state?: LiveLookupState }) {
+function MsiLiveDetails({ locale, state }: { locale: Locale; state?: LiveLookupState }) {
   const t = translations[locale].ticketAvailability;
   if (!state || state.status === "loading") {
     return <p className="max-w-44 text-[9px] leading-4 tracking-wide text-gray-600">{t.checkingAvailability}…</p>;
@@ -308,7 +351,7 @@ function NovekinoLiveDetails({ locale, state }: { locale: Locale; state?: LiveLo
     return <p className="text-[9px] tracking-wide text-gray-600">{t.availabilityUnavailable}</p>;
   }
 
-  const data = state.data as NovekinoLiveScreening;
+  const data = state.data as MsiLiveScreening;
   const summary = data.soldOut
     ? t.soldOut
     : !data.saleEnabled

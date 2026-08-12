@@ -114,6 +114,7 @@ type Show = {
     dubbed?: boolean;
     providerRef?:
       | { provider: "kinoteka"; screeningId: string }
+      | { provider: "kinokultura"; screeningId: string }
       | {
           provider: "novekino";
           cinema: "wisla" | "atlantic";
@@ -130,6 +131,8 @@ type Show = {
 ```
 
 Kino Wisła and Kino Atlantic use their separate, allowlisted NoveKino ticketing JSON tenants as their primary schedule sources. This adds event-specific purchase links, ticketing poster images, version and presentation metadata, and tenant-scoped provider screening IDs. If a feed is unavailable or malformed, the adapter falls back to that cinema's public HTML repertoire and extracts the same event IDs where possible. Atlantic also supplements today's JSON with its public HTML so already-started screenings remain visible.
+
+Kino Kultura uses its allowlisted MSI repertoire JSON as its primary schedule source, including event-specific purchase or reservation modes and live seat capacity. Its HTML repertoire supplements today's feed and remains the fallback when JSON is unavailable. The MSI `AllDates` feed is useful for discovery but is not requested at runtime because the repertoire response already contains the complete published event set.
 
 Language codes are normalized to lowercase ISO 639-1 values. Missing language fields mean that the source did not provide verified information; KinoRadar does not guess. Generic `napisy` and `dubbing` labels are retained as generic badges. A screening is included by the English-friendly filter only when English audio or English subtitles are explicit.
 
@@ -231,6 +234,14 @@ GET /api/novekino/screenings.json?cinema=wisla&ids=114029,114030
 ```
 
 `cinema` accepts only `wisla` or `atlantic`; omitting it defaults to `wisla` for backward compatibility. The endpoint accepts up to 20 unique numeric event IDs and returns remaining seats, capacity, sale state, and sold-out state for matching events. It performs one read-only repertoire request against the selected allowlisted tenant, never starts checkout or reserves seats, and caches successful responses publicly for 30 seconds. Ticket prices are not exposed because NoveKino's price flow is session-based.
+
+Kino Kultura live availability uses the same bounded response shape:
+
+```http
+GET /api/kinokultura/screenings.json?ids=52625,52626
+```
+
+The endpoint accepts up to 20 unique numeric event IDs, contacts only the fixed `rezerwacja.kinokultura.pl` MSI tenant, and publicly caches successful responses for 30 seconds. It never starts checkout or creates a reservation.
 
 ## Adding a cinema
 

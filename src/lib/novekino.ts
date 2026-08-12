@@ -1,3 +1,11 @@
+import {
+  MSI_MAX_LIVE_SCREENINGS,
+  isMsiScreeningId,
+  msiPosterUrl,
+  msiRepertoireUrl,
+  type MsiLiveScreening,
+} from "./msi.ts";
+
 export const NOVEKINO_CINEMAS = ["wisla", "atlantic"] as const;
 export type NovekinoCinema = (typeof NOVEKINO_CINEMAS)[number];
 
@@ -18,27 +26,19 @@ export const NOVEKINO_CONFIG: Record<NovekinoCinema, {
   },
 };
 
-export const NOVEKINO_MAX_LIVE_SCREENINGS = 20;
-
-export type NovekinoLiveScreening = {
-  screeningId: string;
-  seatsLeft: number | null;
-  capacity: number | null;
-  soldOut: boolean;
-  saleEnabled: boolean;
-  fetchedAt: string;
-};
+export const NOVEKINO_MAX_LIVE_SCREENINGS = MSI_MAX_LIVE_SCREENINGS;
+export type NovekinoLiveScreening = MsiLiveScreening;
 
 export function isNovekinoCinema(value: unknown): value is NovekinoCinema {
   return typeof value === "string" && NOVEKINO_CINEMAS.includes(value as NovekinoCinema);
 }
 
 export function isNovekinoScreeningId(value: string): boolean {
-  return /^[1-9]\d{0,9}$/.test(value);
+  return isMsiScreeningId(value);
 }
 
 export function novekinoRepertoireUrl(cinema: NovekinoCinema): string {
-  return `${NOVEKINO_CONFIG[cinema].ticketingBase}/mvc/pl/Repertoire/GetShortEventsWithFilters`;
+  return msiRepertoireUrl(NOVEKINO_CONFIG[cinema].ticketingBase);
 }
 
 export function novekinoBookingUrl(cinema: NovekinoCinema, screeningId: string): string {
@@ -52,6 +52,5 @@ export function novekinoBookingUrl(cinema: NovekinoCinema, screeningId: string):
 }
 
 export function novekinoPosterUrl(cinema: NovekinoCinema, imageId: string | number): string {
-  const query = new URLSearchParams({ id: String(imageId), mode: "thumb" });
-  return `${NOVEKINO_CONFIG[cinema].ticketingBase}/ImageData.ashx?${query}`;
+  return msiPosterUrl(NOVEKINO_CONFIG[cinema].ticketingBase, imageId);
 }

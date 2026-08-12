@@ -7,6 +7,7 @@ export type ScreeningLanguage = {
 
 export type ScreeningProviderRef =
   | { provider: "kinoteka"; screeningId: string }
+  | { provider: "kinokultura"; screeningId: string }
   | { provider: "novekino"; cinema: "wisla" | "atlantic"; screeningId: string };
 
 export type ScreeningPresentation = {
