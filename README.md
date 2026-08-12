@@ -112,10 +112,13 @@ type Show = {
     subtitleLanguages?: string[];
     subtitled?: boolean;
     dubbed?: boolean;
-    providerRef?: {
-      provider: "kinoteka" | "novekino";
-      screeningId: string;
-    };
+    providerRef?:
+      | { provider: "kinoteka"; screeningId: string }
+      | {
+          provider: "novekino";
+          cinema: "wisla" | "atlantic";
+          screeningId: string;
+        };
     presentation?: {
       printType?: string;
       soundType?: string;
@@ -126,7 +129,7 @@ type Show = {
 };
 ```
 
-Kino Wisła uses NoveKino's public ticketing JSON as its primary schedule source. This adds event-specific purchase links, ticketing poster images, version and presentation metadata, and provider screening IDs. If that undocumented feed is unavailable or malformed, the adapter falls back to the cinema's public HTML repertoire and extracts the same event IDs where possible.
+Kino Wisła and Kino Atlantic use their separate, allowlisted NoveKino ticketing JSON tenants as their primary schedule sources. This adds event-specific purchase links, ticketing poster images, version and presentation metadata, and tenant-scoped provider screening IDs. If a feed is unavailable or malformed, the adapter falls back to that cinema's public HTML repertoire and extracts the same event IDs where possible. Atlantic also supplements today's JSON with its public HTML so already-started screenings remain visible.
 
 Language codes are normalized to lowercase ISO 639-1 values. Missing language fields mean that the source did not provide verified information; KinoRadar does not guess. Generic `napisy` and `dubbing` labels are retained as generic badges. A screening is included by the English-friendly filter only when English audio or English subtitles are explicit.
 
@@ -221,13 +224,13 @@ GET /api/releases.json?locale=pl&q=diuna&genre=878&cursor=2026-09-04
 
 `locale` is required and accepts `pl` or `en`. `q` and `genre` filter the complete cached catalog before results are grouped. `cursor` is the last rendered release date and returns the next eight complete date groups. The response includes the groups, localized genre options, matching counts, the next cursor, update time, and a stale-data flag.
 
-Film pages request live Kino Wisła availability in one bounded batch:
+Film pages request live NoveKino availability in one bounded batch per cinema tenant:
 
 ```http
-GET /api/novekino/screenings.json?ids=114029,114030
+GET /api/novekino/screenings.json?cinema=wisla&ids=114029,114030
 ```
 
-The endpoint accepts up to 20 unique numeric event IDs and returns remaining seats, capacity, sale state, and sold-out state for matching events. It performs one read-only repertoire request, never starts checkout or reserves seats, and caches successful responses publicly for 30 seconds. Ticket prices are not exposed because NoveKino's price flow is session-based.
+`cinema` accepts only `wisla` or `atlantic`; omitting it defaults to `wisla` for backward compatibility. The endpoint accepts up to 20 unique numeric event IDs and returns remaining seats, capacity, sale state, and sold-out state for matching events. It performs one read-only repertoire request against the selected allowlisted tenant, never starts checkout or reserves seats, and caches successful responses publicly for 30 seconds. Ticket prices are not exposed because NoveKino's price flow is session-based.
 
 ## Adding a cinema
 

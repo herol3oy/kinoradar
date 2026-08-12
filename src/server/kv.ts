@@ -2,7 +2,7 @@ import type { Show } from '../lib/normalize.ts';
 
 const KV_PREFIX = 'SHOWTIMES';
 const KV_TTL_SECONDS = 86400; // 24 hours
-export const SCHEDULE_SCHEMA_VERSION = 5;
+export const SCHEDULE_SCHEMA_VERSION = 6;
 
 export type ScheduleCache = {
   schemaVersion: number;

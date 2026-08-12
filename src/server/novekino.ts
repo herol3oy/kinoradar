@@ -1,15 +1,17 @@
 import {
   NOVEKINO_MAX_LIVE_SCREENINGS,
-  NOVEKINO_REPERTOIRE_URL,
   isNovekinoScreeningId,
+  novekinoRepertoireUrl,
+  type NovekinoCinema,
   type NovekinoLiveScreening,
 } from "../lib/novekino.ts";
 import { fetchWithTimeout } from "./fetch.ts";
 
-type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+export type NovekinoFetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 export type NovekinoRepertoireEvent = {
   eventId?: unknown;
+  eventDetailId?: unknown;
   eventTitle?: unknown;
   eventDateTime?: unknown;
   imageId?: unknown;
@@ -19,6 +21,7 @@ export type NovekinoRepertoireEvent = {
   saleEnabled?: unknown;
   saleDisabledTooltip?: unknown;
   details?: {
+    eventDetailUniqueNumber?: unknown;
     name?: unknown;
     shortName?: unknown;
     dubbing?: unknown;
@@ -54,26 +57,28 @@ export function parseNovekinoScreeningIds(value: string | null): string[] {
 }
 
 export async function fetchNovekinoRepertoire(
-  fetcher: Fetcher = fetchWithTimeout,
+  cinema: NovekinoCinema,
+  fetcher: NovekinoFetcher = fetchWithTimeout,
 ): Promise<NovekinoRepertoireEvent[]> {
-  const response = await fetcher(NOVEKINO_REPERTOIRE_URL, {
+  const response = await fetcher(novekinoRepertoireUrl(cinema), {
     headers: { Accept: "application/json" },
   });
-  if (!response.ok) throw new Error(`NoveKino ticketing returned ${response.status}`);
+  if (!response.ok) throw new Error(`NoveKino ${cinema} ticketing returned ${response.status}`);
   const value = await response.json() as NovekinoRepertoireResponse;
   if (!value || !Array.isArray(value.repertoireEvents)) {
-    throw new Error("NoveKino ticketing returned an invalid response");
+    throw new Error(`NoveKino ${cinema} ticketing returned an invalid response`);
   }
   return value.repertoireEvents as NovekinoRepertoireEvent[];
 }
 
 export async function getNovekinoLiveScreenings(
+  cinema: NovekinoCinema,
   ids: string[],
-  fetcher: Fetcher = fetchWithTimeout,
+  fetcher: NovekinoFetcher = fetchWithTimeout,
 ): Promise<NovekinoLiveScreening[]> {
   const normalizedIds = parseNovekinoScreeningIds(ids.join(","));
   const requested = new Set(normalizedIds);
-  const events = await fetchNovekinoRepertoire(fetcher);
+  const events = await fetchNovekinoRepertoire(cinema, fetcher);
   const fetchedAt = new Date().toISOString();
   const result: Array<{
     id: string;

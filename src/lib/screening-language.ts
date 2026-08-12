@@ -5,10 +5,9 @@ export type ScreeningLanguage = {
   dubbed?: boolean;
 };
 
-export type ScreeningProviderRef = {
-  provider: "kinoteka" | "novekino";
-  screeningId: string;
-};
+export type ScreeningProviderRef =
+  | { provider: "kinoteka"; screeningId: string }
+  | { provider: "novekino"; cinema: "wisla" | "atlantic"; screeningId: string };
 
 export type ScreeningPresentation = {
   printType?: string;
@@ -114,6 +113,9 @@ export function screeningFingerprint(screening: Screening): string {
 }
 
 export function screeningIdentity(screening: Screening): string {
+  if (screening.providerRef?.provider === "novekino") {
+    return `novekino:${screening.providerRef.cinema}:${screening.providerRef.screeningId}`;
+  }
   return screening.providerRef
     ? `${screening.providerRef.provider}:${screening.providerRef.screeningId}`
     : screeningFingerprint(screening);

@@ -4,8 +4,8 @@ import { favoriteFilmKey, favoriteKey } from "../lib/favorites";
 import { showsForFilm } from "../lib/film";
 import type { Show } from "../lib/normalize";
 import type { KinotekaLiveScreening } from "../lib/kinoteka";
-import type { NovekinoLiveScreening } from "../lib/novekino";
-import { screeningIdentity, type Screening } from "../lib/screening-language";
+import { NOVEKINO_CINEMAS, type NovekinoCinema, type NovekinoLiveScreening } from "../lib/novekino";
+import { screeningIdentity, type Screening, type ScreeningProviderRef } from "../lib/screening-language";
 import { useFavorites } from "../lib/useFavorites";
 import DateSelector from "./DateSelector";
 import ScreeningBadges from "./ScreeningBadges";
@@ -30,8 +30,14 @@ type LiveLookupState =
   | { status: "loaded"; data: KinotekaLiveScreening | NovekinoLiveScreening }
   | { status: "failed" };
 
-function liveScreeningKey(provider: "kinoteka" | "novekino", screeningId: string): string {
-  return `${provider}:${screeningId}`;
+function liveScreeningKey(provider: "kinoteka" | "novekino", screeningId: string, cinema?: NovekinoCinema): string {
+  return provider === "novekino" ? `${provider}:${cinema}:${screeningId}` : `${provider}:${screeningId}`;
+}
+
+function providerLiveScreeningKey(providerRef: ScreeningProviderRef): string {
+  return providerRef.provider === "novekino"
+    ? liveScreeningKey("novekino", providerRef.screeningId, providerRef.cinema)
+    : liveScreeningKey("kinoteka", providerRef.screeningId);
 }
 
 function timeValue(time: string): number {
@@ -53,13 +59,21 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
   const kinotekaIds = [...new Set(shows.flatMap((show) => show.screenings.flatMap((screening) =>
     screening.providerRef?.provider === "kinoteka" ? [screening.providerRef.screeningId] : [],
   )))];
-  const novekinoIds = [...new Set(shows.flatMap((show) => show.screenings.flatMap((screening) =>
-    screening.providerRef?.provider === "novekino" ? [screening.providerRef.screeningId] : [],
-  )))];
-  const liveIdsKey = `kinoteka:${kinotekaIds.join(",")}|novekino:${novekinoIds.join(",")}`;
+  const novekinoIdsByCinema = Object.fromEntries(NOVEKINO_CINEMAS.map((cinema) => [
+    cinema,
+    [...new Set(shows.flatMap((show) => show.screenings.flatMap((screening) =>
+      screening.providerRef?.provider === "novekino" && screening.providerRef.cinema === cinema
+        ? [screening.providerRef.screeningId]
+        : [],
+    )))],
+  ])) as Record<NovekinoCinema, string[]>;
+  const liveIdsKey = [
+    `kinoteka:${kinotekaIds.join(",")}`,
+    ...NOVEKINO_CINEMAS.map((cinema) => `novekino:${cinema}:${novekinoIdsByCinema[cinema].join(",")}`),
+  ].join("|");
 
   useEffect(() => {
-    if (!kinotekaIds.length && !novekinoIds.length) {
+    if (!kinotekaIds.length && NOVEKINO_CINEMAS.every((cinema) => !novekinoIdsByCinema[cinema].length)) {
       setLiveScreenings({});
       return;
     }
@@ -68,7 +82,10 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
     let nextIndex = 0;
     setLiveScreenings(Object.fromEntries([
       ...kinotekaIds.map((id) => [liveScreeningKey("kinoteka", id), { status: "loading" as const }]),
-      ...novekinoIds.map((id) => [liveScreeningKey("novekino", id), { status: "loading" as const }]),
+      ...NOVEKINO_CINEMAS.flatMap((cinema) => novekinoIdsByCinema[cinema].map((id) => [
+        liveScreeningKey("novekino", id, cinema),
+        { status: "loading" as const },
+      ] as const)),
     ]));
 
     const kinotekaWorker = async () => {
@@ -95,10 +112,11 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
       }
     };
 
-    const loadNovekino = async () => {
-      if (!novekinoIds.length) return;
+    const loadNovekino = async (cinema: NovekinoCinema) => {
+      const ids = novekinoIdsByCinema[cinema];
+      if (!ids.length) return;
       try {
-        const response = await fetch(`/api/novekino/screenings.json?ids=${encodeURIComponent(novekinoIds.join(","))}`, {
+        const response = await fetch(`/api/novekino/screenings.json?cinema=${cinema}&ids=${encodeURIComponent(ids.join(","))}`, {
           signal: controller.signal,
           headers: { Accept: "application/json" },
         });
@@ -109,9 +127,9 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
         if (!controller.signal.aborted) {
           setLiveScreenings((current) => {
             const next = { ...current };
-            novekinoIds.forEach((id) => {
+            ids.forEach((id) => {
               const screening = byId.get(id);
-              next[liveScreeningKey("novekino", id)] = screening
+              next[liveScreeningKey("novekino", id, cinema)] = screening
                 ? { status: "loaded", data: screening }
                 : { status: "failed" };
             });
@@ -122,7 +140,7 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
         if (!controller.signal.aborted && !(error instanceof DOMException && error.name === "AbortError")) {
           setLiveScreenings((current) => {
             const next = { ...current };
-            novekinoIds.forEach((id) => { next[liveScreeningKey("novekino", id)] = { status: "failed" }; });
+            ids.forEach((id) => { next[liveScreeningKey("novekino", id, cinema)] = { status: "failed" }; });
             return next;
           });
         }
@@ -131,7 +149,7 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
 
     void Promise.all([
       ...Array.from({ length: Math.min(4, kinotekaIds.length) }, kinotekaWorker),
-      loadNovekino(),
+      ...NOVEKINO_CINEMAS.map(loadNovekino),
     ]);
     return () => controller.abort();
   }, [liveIdsKey]);
@@ -219,7 +237,7 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
                       locale={locale}
                       screening={screening}
                       state={screening.providerRef
-                        ? liveScreenings[liveScreeningKey(screening.providerRef.provider, screening.providerRef.screeningId)]
+                        ? liveScreenings[providerLiveScreeningKey(screening.providerRef)]
                         : undefined}
                     />
                   </div>;

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { parseKinowisla } from "../src/lib/parsers/kinowisla.ts";
+import { parseNovekinoCinema } from "../src/lib/parsers/novekino.ts";
 import { favoriteKey } from "../src/lib/favorites.ts";
 import { normalizeShow } from "../src/lib/normalize.ts";
 import { novekinoBookingUrl } from "../src/lib/novekino.ts";
@@ -24,6 +25,7 @@ function event(overrides = {}) {
     saleEnabled: true,
     saleDisabledTooltip: "Wyprzedano",
     details: {
+      eventDetailUniqueNumber: 19959,
       shortName: "Historie równoległe - napisy",
       dubbing: "NAP",
       additionalInfo: "NAP",
@@ -63,8 +65,8 @@ test("uses the NoveKino ticketing JSON as Wisła's primary schedule source", asy
   assert.deepEqual(result[0].screenings.map((screening) => screening.time), ["11:10", "20:10"]);
   assert.deepEqual(result[0].screenings[1], {
     time: "20:10",
-    link: novekinoBookingUrl("114029"),
-    providerRef: { provider: "novekino", screeningId: "114029" },
+    link: novekinoBookingUrl("wisla", "114029"),
+    providerRef: { provider: "novekino", cinema: "wisla", screeningId: "114029" },
     subtitled: true,
     presentation: { printType: "2D" },
   });
@@ -103,8 +105,34 @@ test("falls back to Wisła HTML and preserves event-specific purchase links", as
   assert.deepEqual(result[0].screenings, [{
     time: "20:10",
     link: "https://wisla.novekino.pl/msi/default.aspx?event_id=114029&typetran=0",
-    providerRef: { provider: "novekino", screeningId: "114029" },
+    providerRef: { provider: "novekino", cinema: "wisla", screeningId: "114029" },
   }]);
+});
+
+test("rejects invalid Wisła ticketing artwork IDs and uses the public HTML poster", async () => {
+  const fetcher = async (input) => {
+    const url = new URL(String(input));
+    if (url.hostname === "wisla.novekino.pl") {
+      return Response.json({ repertoireEvents: [event({
+        imageId: -1,
+        details: { ...event().details, imageId: -1 },
+      })] });
+    }
+    return new Response(`
+      <table><tr class="repertoire-movie-tr">
+        <td><div class="repertoire-movie-poster"><img src="/multimedia/historie/publiczny-plakat.jpg"></div>
+        <div class="repertoire-movie-title"><a href="film.php?id=19959">Historie równoległe</a></div></td>
+        <td><a class="repertoire-movie-time" data-hour="20:10"
+          data-buy-link="https://wisla.novekino.pl/msi/default.aspx?event_id=114029">20:10</a></td>
+      </tr></table>
+    `);
+  };
+
+  const result = await parseNovekinoCinema("wisla", "2026-08-14", { fetcher });
+
+  assert.equal(result.length, 1);
+  assert.equal(result[0].poster, "https://www.novekino.pl/multimedia/historie/publiczny-plakat.jpg");
+  assert.doesNotMatch(result[0].poster, /id=-1/);
 });
 
 test("maps live Wisła capacity in one repertoire request", async () => {
@@ -132,7 +160,7 @@ test("maps live Wisła capacity in one repertoire request", async () => {
     });
   };
 
-  const result = await getNovekinoLiveScreenings(["114030", "114029", "114031", "123456"], fetcher);
+  const result = await getNovekinoLiveScreenings("wisla", ["114030", "114029", "114031", "123456"], fetcher);
 
   assert.equal(requests, 1);
   assert.deepEqual(result.map(({ screeningId, seatsLeft, capacity, saleEnabled, soldOut }) => ({
@@ -159,8 +187,8 @@ test("keeps Wisła screening identities distinct without changing favorite keys"
   const show = normalizeShow({
     title: "Film",
     screenings: [
-      { time: "18:00", providerRef: { provider: "novekino", screeningId: "114029" } },
-      { time: "18:00", providerRef: { provider: "novekino", screeningId: "114030" } },
+      { time: "18:00", providerRef: { provider: "novekino", cinema: "wisla", screeningId: "114029" } },
+      { time: "18:00", providerRef: { provider: "novekino", cinema: "wisla", screeningId: "114030" } },
     ],
   }, "Wisła", "kinowisla");
 
@@ -174,8 +202,12 @@ test("keeps Wisła screening identities distinct without changing favorite keys"
 
 test("serves bounded Wisła live availability through the public API route", async (t) => {
   const originalFetch = globalThis.fetch;
+  const hosts = [];
   t.after(() => { globalThis.fetch = originalFetch; });
-  globalThis.fetch = async () => Response.json({ repertoireEvents: [event()] });
+  globalThis.fetch = async (input) => {
+    hosts.push(new URL(String(input)).hostname);
+    return Response.json({ repertoireEvents: [event()] });
+  };
 
   const invalid = await getLiveScreenings({
     request: new Request("https://kinoradar.pl/api/novekino/screenings.json?ids=invalid"),
@@ -192,6 +224,12 @@ test("serves bounded Wisła live availability through the public API route", asy
   assert.equal(body.length, 1);
   assert.equal(body[0].screeningId, "114029");
   assert.equal(body[0].seatsLeft, 117);
+  assert.equal(hosts.at(-1), "wisla.novekino.pl");
+
+  const invalidCinema = await getLiveScreenings({
+    request: new Request("https://kinoradar.pl/api/novekino/screenings.json?cinema=example.com&ids=114029"),
+  });
+  assert.equal(invalidCinema.status, 400);
 
   t.mock.method(console, "error", () => {});
   globalThis.fetch = async () => new Response("unavailable", { status: 503 });
