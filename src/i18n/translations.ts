@@ -151,7 +151,7 @@ export const translations: Record<Locale, Translations> = {
     header: {
       home: "Strona główna KinoRadar",
       tagline: "Sygnał warszawskich kin",
-      online: "12 kin online",
+      online: "13 kin online",
       language: "Wybierz język",
     },
     hero: {
@@ -306,7 +306,7 @@ export const translations: Record<Locale, Translations> = {
     header: {
       home: "KinoRadar home",
       tagline: "Warsaw cinema signal",
-      online: "12 cinemas online",
+      online: "13 cinemas online",
       language: "Choose language",
     },
     hero: {

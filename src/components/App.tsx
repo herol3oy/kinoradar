@@ -9,7 +9,7 @@ import ShowFilters, {
   type ViewMode,
 } from "./ShowFilters";
 import TodayShows from "./TodayShows";
-import type { Cinema } from "../data/cinemas";
+import { cinemas as cinemaCatalog, type Cinema } from "../data/cinemas";
 import { favoriteFilmKey } from "../lib/favorites";
 import { useFavorites } from "../lib/useFavorites";
 import FavoritesPage from "./FavoritesPage";
@@ -74,7 +74,9 @@ export default function App({
 
   const availableShows = lockedCinema ? shows.filter((show) => show.source === lockedCinema.slug) : shows;
 
-  const cinemas = [...new Set(availableShows.map((show) => show.cinema))].sort((a, b) => a.localeCompare(b, locale));
+  const cinemaNames = cinemaCatalog
+    .map((item) => item.name)
+    .sort((a, b) => a.localeCompare(b, locale));
 
   const filteredShows = (() => {
     const normalizedQuery = normalizeSearch(query.trim());
@@ -115,7 +117,7 @@ export default function App({
 
   const displayShows = mergeShowsForDisplay(filteredShows);
   const filmCount = new Set(displayShows.map((show) => normalizeSearch(show.canonicalTitle))).size;
-  const cinemaCount = lockedCinema ? 1 : cinemas.length;
+  const cinemaCount = lockedCinema ? 1 : cinemaNames.length;
   const relevantFailures = lockedCinema
     ? failedCinemas.filter((name) => name === lockedCinema.label)
     : failedCinemas;
@@ -249,7 +251,7 @@ export default function App({
           {favoritesNotice && <aside className="mb-4 border border-retro-yellow/30 bg-retro-yellow/5 px-4 py-3 text-xs text-retro-yellow" role="status">{t.favorites.limit}</aside>}
           <ShowFilters
             locale={locale}
-            cinemas={cinemas}
+            cinemas={cinemaNames}
             query={query}
             cinema={cinema}
             fromTime={fromTime}
