@@ -25,6 +25,7 @@ import { BOK_CINEMAS } from '../lib/bok';
 import { normalizeWarsawDate } from '../lib/warsaw-date';
 import { createMultikinoClient } from './multikino';
 import { createCinemaCityClient } from './cinema-city';
+import { allSettledConcurrent } from './concurrency';
 
 export type ScrapeResult = {
   shows: Show[];
@@ -90,11 +91,14 @@ function cinemaParsers() {
 }
 
 export async function getShowsReport(date?: string): Promise<ScrapeResult> {
+  const startedAt = Date.now();
   const day = normalizeWarsawDate(date);
   const parsers = cinemaParsers();
 
-  const results = await Promise.allSettled(
-    parsers.map((cinema) => cinema.parse(day))
+  const results = await allSettledConcurrent(
+    parsers,
+    3,
+    (cinema) => cinema.parse(day),
   );
 
   const all: any[] = [];
@@ -107,7 +111,14 @@ export async function getShowsReport(date?: string): Promise<ScrapeResult> {
       all.push(...normalizeMany(result.value, cinema.name, cinema.slug));
     } else {
       failedCinemas.push(cinema.label);
-      console.error(`${cinema.label} parser error:`, result.reason);
+      const error = result.reason;
+      console.error(JSON.stringify({
+        message: 'cinema parser failed',
+        cinema: cinema.label,
+        date: day,
+        errorType: error instanceof Error ? error.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      }));
     }
   });
 
@@ -118,6 +129,14 @@ export async function getShowsReport(date?: string): Promise<ScrapeResult> {
     seen.add(key);
     return true;
   });
+
+  console.log(JSON.stringify({
+    message: 'schedule scrape complete',
+    date: day,
+    shows: deduped.length,
+    failedCinemas,
+    durationMs: Date.now() - startedAt,
+  }));
 
   return { shows: deduped, failedCinemas };
 }

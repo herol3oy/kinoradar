@@ -1,7 +1,8 @@
 import type { Show } from '../lib/normalize.ts';
 
 const KV_PREFIX = 'SHOWTIMES';
-const KV_TTL_SECONDS = 86400; // 24 hours
+const COMPLETE_SCHEDULE_TTL_SECONDS = 86400; // 24 hours
+const PARTIAL_SCHEDULE_TTL_SECONDS = 1800; // 30 minutes
 export const SCHEDULE_SCHEMA_VERSION = 11;
 
 export type ScheduleCache = {
@@ -36,7 +37,9 @@ export async function setCachedShows(
 ): Promise<ScheduleCache> {
   const data = { schemaVersion: SCHEDULE_SCHEMA_VERSION, shows, failedCinemas, updatedAt: new Date().toISOString() };
   await kv.put(kvKey(date), JSON.stringify(data), {
-    expirationTtl: KV_TTL_SECONDS,
+    expirationTtl: failedCinemas.length > 0
+      ? PARTIAL_SCHEDULE_TTL_SECONDS
+      : COMPLETE_SCHEDULE_TTL_SECONDS,
   });
   return data;
 }

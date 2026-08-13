@@ -75,10 +75,10 @@ export default {
       }
     };
 
-    ctx.waitUntil(Promise.all([
-      scrapeAndStore(today),
-      scrapeAndStore(tomorrow),
-      refreshReleases(),
-    ]));
+    ctx.waitUntil((async () => {
+      await scrapeAndStore(today);
+      await scrapeAndStore(tomorrow);
+      await refreshReleases();
+    })());
   },
 } satisfies ExportedHandler<Env>;

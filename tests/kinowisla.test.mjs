@@ -98,8 +98,8 @@ test("falls back to Wisła HTML and preserves event-specific purchase links", as
 
   const result = await parseKinowisla("2026-08-14");
 
-  assert.equal(requests.length, 2);
-  assert.equal(requests[1].searchParams.get("data"), "2026-08-14");
+  assert.equal(requests.length, 3);
+  assert.equal(requests[2].searchParams.get("data"), "2026-08-14");
   assert.equal(result[0].link, "https://www.novekino.pl/kina/wisla/film.php?id=19959");
   assert.equal(result[0].poster, "https://www.novekino.pl/multimedia/historie/plakat.jpg");
   assert.deepEqual(result[0].screenings, [{
