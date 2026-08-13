@@ -13,6 +13,7 @@ export type RawShow = {
   times?: string[] | string;
   link?: string;
   screenings?: RawScreening[];
+  screeningLinksAreExplicit?: boolean;
   [key: string]: any;
 };
 
@@ -72,7 +73,11 @@ export function normalizeShow(raw: RawShow, cinema: string, source?: string): Sh
     : rawTimes.map((time) => ({ time }));
   const screenings = dedupeScreenings(
     rawScreenings
-      .map((screening) => normalizeRawScreening(screening, link, language))
+      .map((screening) => normalizeRawScreening(
+        screening,
+        raw.screeningLinksAreExplicit ? undefined : link,
+        language,
+      ))
       .filter((screening): screening is Screening => screening !== null),
   );
   const times = [...new Set(screenings.map((screening) => screening.time))];

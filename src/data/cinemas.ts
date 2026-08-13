@@ -13,6 +13,11 @@ export const cinemas = [
   { slug: "kinogram", name: "Kinogram", label: "Kinogram" },
   { slug: "kinomuzeum", name: "KINOMUZEUM", label: "KINOMUZEUM" },
   { slug: "kinopraha", name: "Praha", label: "Kino Praha" },
+  { slug: "multikino-reduta", name: "Multikino G City Reduta", label: "Multikino G City Reduta" },
+  { slug: "multikino-mlociny", name: "Multikino Młociny", label: "Multikino Młociny" },
+  { slug: "multikino-targowek", name: "Multikino G City Targówek", label: "Multikino G City Targówek" },
+  { slug: "multikino-wola-park", name: "Multikino Wola Park", label: "Multikino Wola Park" },
+  { slug: "multikino-zlote-tarasy", name: "Multikino Złote Tarasy", label: "Multikino Złote Tarasy" },
 ] as const;
 
 export type Cinema = (typeof cinemas)[number];

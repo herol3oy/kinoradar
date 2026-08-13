@@ -35,7 +35,8 @@ function liveScreeningKey(provider: "kinoteka" | "kinokultura" | "novekino", scr
   return provider === "novekino" ? `${provider}:${cinema}:${screeningId}` : `${provider}:${screeningId}`;
 }
 
-function providerLiveScreeningKey(providerRef: ScreeningProviderRef): string {
+function providerLiveScreeningKey(providerRef: ScreeningProviderRef): string | undefined {
+  if (providerRef.provider === "multikino") return undefined;
   if (providerRef.provider === "novekino") {
     return liveScreeningKey("novekino", providerRef.screeningId, providerRef.cinema);
   }
@@ -269,6 +270,9 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
               <div className="mt-4 flex flex-wrap gap-2">
                 {entries.map(({ screening, show }) => {
                   const selected = favoriteKeys.has(favoriteKey(show.canonicalTitle, selectedDate, screening.time, show.cinema, screening, show.source));
+                  const liveKey = screening.providerRef
+                    ? providerLiveScreeningKey(screening.providerRef)
+                    : undefined;
                   return <div key={screeningIdentity(screening)} className="space-y-1">
                     <div className={`flex items-center border ${selected ? "border-retro-yellow bg-retro-yellow/10" : "border-white/10"}`}>
                       <button type="button" aria-pressed={selected} aria-label={`${selected ? t.favorites.remove : t.favorites.add}: ${show.canonicalTitle}, ${cinema}, ${screening.time}`} onClick={() => { const result = toggle(show, selectedDate, screening); setFavoritesNotice(result === "full"); }} className={`px-2.5 py-2 text-lg ${selected ? "text-retro-yellow" : "text-gray-500 hover:text-retro-yellow"}`}><span aria-hidden="true">{selected ? "★" : "☆"}</span></button>
@@ -279,9 +283,7 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
                     <ScreeningLiveDetails
                       locale={locale}
                       screening={screening}
-                      state={screening.providerRef
-                        ? liveScreenings[providerLiveScreeningKey(screening.providerRef)]
-                        : undefined}
+                      state={liveKey ? liveScreenings[liveKey] : undefined}
                     />
                   </div>;
                 })}

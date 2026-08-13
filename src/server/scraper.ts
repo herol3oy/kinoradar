@@ -12,16 +12,19 @@ import { parseIluzjon, siteName as iluzjonName } from '../lib/parsers/iluzjon';
 import { parseKinogram, siteName as kinogramName } from '../lib/parsers/kinogram';
 import { parseKinomuzeum, siteName as kinomuzeumName } from '../lib/parsers/kinomuzeum';
 import { parseKinopraha, siteName as kinoprahaName } from '../lib/parsers/kinopraha';
+import { parseMultikinoCinema } from '../lib/parsers/multikino';
 import { normalizeMany, type Show } from '../lib/normalize';
-import { cinemas } from '../data/cinemas';
+import { cinemas, getCinema } from '../data/cinemas';
+import { MULTIKINO_CINEMAS } from '../lib/multikino';
 import { normalizeWarsawDate } from '../lib/warsaw-date';
+import { createMultikinoClient } from './multikino';
 
 export type ScrapeResult = {
   shows: Show[];
   failedCinemas: string[];
 };
 
-const CINEMA_PARSERS = [
+const CORE_CINEMA_PARSERS = [
   { ...cinemas[0], parse: parseKinoteka, name: kinotekaName },
   { ...cinemas[1], parse: parseKinomuranow, name: muranowName },
   { ...cinemas[2], parse: parseUJazdowski, name: ujName },
@@ -38,18 +41,32 @@ const CINEMA_PARSERS = [
   { ...cinemas[13], parse: parseKinopraha, name: kinoprahaName },
 ];
 
+function cinemaParsers() {
+  const multikinoClient = createMultikinoClient();
+  const multikinoParsers = MULTIKINO_CINEMAS.map((config) => {
+    const cinema = getCinema(config.slug);
+    if (!cinema) throw new Error(`Missing cinema registry entry for ${config.slug}`);
+    return {
+      ...cinema,
+      parse: (day: string) => parseMultikinoCinema(config.key, day, { client: multikinoClient }),
+    };
+  });
+  return [...CORE_CINEMA_PARSERS, ...multikinoParsers];
+}
+
 export async function getShowsReport(date?: string): Promise<ScrapeResult> {
   const day = normalizeWarsawDate(date);
+  const parsers = cinemaParsers();
 
   const results = await Promise.allSettled(
-    CINEMA_PARSERS.map((cinema) => cinema.parse(day))
+    parsers.map((cinema) => cinema.parse(day))
   );
 
   const all: any[] = [];
   const failedCinemas: string[] = [];
 
   results.forEach((result, index) => {
-    const cinema = CINEMA_PARSERS[index];
+    const cinema = parsers[index];
 
     if (result.status === 'fulfilled') {
       all.push(...normalizeMany(result.value, cinema.name, cinema.slug));

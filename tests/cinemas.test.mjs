@@ -4,8 +4,8 @@ import test from "node:test";
 import { cinemas, getCinema } from "../src/data/cinemas.ts";
 import { getCachedSchedule, SCHEDULE_SCHEMA_VERSION } from "../src/server/kv.ts";
 
-test("registers KINOMUZEUM and Kino Praha in the complete cinema catalog", () => {
-  assert.equal(cinemas.length, 14);
+test("registers every cinema in the complete cinema catalog", () => {
+  assert.equal(cinemas.length, 19);
   assert.deepEqual(getCinema("kinomuzeum"), {
     slug: "kinomuzeum",
     name: "KINOMUZEUM",
@@ -18,6 +18,16 @@ test("registers KINOMUZEUM and Kino Praha in the complete cinema catalog", () =>
     label: "Kino Praha",
   });
   assert.ok(cinemas.map((cinema) => cinema.name).includes("Praha"));
+  assert.deepEqual(
+    cinemas.filter((cinema) => cinema.slug.startsWith("multikino-")).map((cinema) => cinema.name),
+    [
+      "Multikino G City Reduta",
+      "Multikino Młociny",
+      "Multikino G City Targówek",
+      "Multikino Wola Park",
+      "Multikino Złote Tarasy",
+    ],
+  );
 });
 
 test("invalidates schedules cached before the latest cinema integration", async () => {
