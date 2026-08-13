@@ -25,6 +25,10 @@ export const cinemas = [
   { slug: "cinema-city-mokotow", name: "Cinema City Mokotów", label: "Cinema City Mokotów" },
   { slug: "cinema-city-promenada", name: "Cinema City Promenada", label: "Cinema City Promenada" },
   { slug: "cinema-city-sadyba", name: "Cinema City Sadyba", label: "Cinema City Sadyba" },
+  { slug: "helios-blue-city", name: "Helios Blue City", label: "Helios Blue City" },
+  { slug: "kino-glebocka-66", name: "Kino Głębocka 66", label: "Kino Głębocka 66" },
+  { slug: "kino-na-boku", name: "Kino na boku", label: "Kino na boku" },
+  { slug: "stacja-falenica", name: "Kinokawiarnia Stacja Falenica", label: "Kinokawiarnia Stacja Falenica" },
 ] as const;
 
 export type Cinema = (typeof cinemas)[number];

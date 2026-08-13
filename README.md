@@ -16,6 +16,24 @@ The application currently aggregates:
 - Kino Cytadela
 - Iluzjon
 - Kinogram
+- KINOMUZEUM
+- Kino Praha
+- Multikino G City Reduta
+- Multikino Młociny
+- Multikino G City Targówek
+- Multikino Wola Park
+- Multikino Złote Tarasy
+- Cinema City Arkadia
+- Cinema City Bemowo
+- Cinema City Galeria Północna
+- Cinema City Janki
+- Cinema City Mokotów
+- Cinema City Promenada
+- Cinema City Sadyba
+- Helios Blue City
+- Kino Głębocka 66
+- Kino na boku
+- Kinokawiarnia Stacja Falenica
 
 Each cinema has its own parser because the source websites use different markup and schedule formats. KinoRadar runs all parsers independently, converts their results to a shared data model, and keeps results from the parsers that succeed even if another cinema is temporarily unavailable.
 
@@ -53,7 +71,7 @@ sequenceDiagram
     participant C as Cloudflare cron
     participant W as Worker
     participant S as Scraper
-    participant P as 26 cinema parsers
+    participant P as 30 cinema parsers
     participant K as Cloudflare KV
 
     C->>W: Run every 4 hours
@@ -270,7 +288,7 @@ After deploying changes to routes or metadata:
 6. Submit `https://kinoradar.pl/sitemap-index.xml` and inspect `/pl/`, `/en/`, and representative cinema URLs.
 7. Monitor indexing, queries, click-through rate, and Core Web Vitals after releases.
 
-The sitemap contains the two localized homepages and 26 cinema pages per language. Cinema pages intentionally omit `LocalBusiness` markup until verified addresses and venue details are available.
+The sitemap contains the two localized homepages and 30 cinema pages per language. Cinema pages intentionally omit `LocalBusiness` markup until verified addresses and venue details are available.
 
 Favorites live only in the visitor's browser; no account or backend write is required. Shared URLs contain the canonical film identity, selected screening, and compact language metadata, are limited to 20 items, render read-only, use clean canonical URLs, and are excluded from indexing and the sitemap. Favorites and shared lists use payload version 3; earlier local or shared versions are intentionally not migrated.
 

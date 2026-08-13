@@ -5,7 +5,7 @@ import { cinemas, getCinema } from "../src/data/cinemas.ts";
 import { getCachedSchedule, SCHEDULE_SCHEMA_VERSION } from "../src/server/kv.ts";
 
 test("registers every cinema in the complete cinema catalog", () => {
-  assert.equal(cinemas.length, 26);
+  assert.equal(cinemas.length, 30);
   assert.deepEqual(getCinema("kinomuzeum"), {
     slug: "kinomuzeum",
     name: "KINOMUZEUM",
@@ -39,6 +39,10 @@ test("registers every cinema in the complete cinema catalog", () => {
       "Cinema City Promenada",
       "Cinema City Sadyba",
     ],
+  );
+  assert.deepEqual(
+    cinemas.slice(-4).map((cinema) => cinema.name),
+    ["Helios Blue City", "Kino Głębocka 66", "Kino na boku", "Kinokawiarnia Stacja Falenica"],
   );
 });
 
