@@ -36,7 +36,7 @@ function liveScreeningKey(provider: "kinoteka" | "kinokultura" | "novekino", scr
 }
 
 function providerLiveScreeningKey(providerRef: ScreeningProviderRef): string | undefined {
-  if (providerRef.provider === "multikino") return undefined;
+  if (providerRef.provider === "multikino" || providerRef.provider === "cinema-city") return undefined;
   if (providerRef.provider === "novekino") {
     return liveScreeningKey("novekino", providerRef.screeningId, providerRef.cinema);
   }

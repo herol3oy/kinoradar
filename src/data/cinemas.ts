@@ -18,6 +18,13 @@ export const cinemas = [
   { slug: "multikino-targowek", name: "Multikino G City Targówek", label: "Multikino G City Targówek" },
   { slug: "multikino-wola-park", name: "Multikino Wola Park", label: "Multikino Wola Park" },
   { slug: "multikino-zlote-tarasy", name: "Multikino Złote Tarasy", label: "Multikino Złote Tarasy" },
+  { slug: "cinema-city-arkadia", name: "Cinema City Arkadia", label: "Cinema City Arkadia" },
+  { slug: "cinema-city-bemowo", name: "Cinema City Bemowo", label: "Cinema City Bemowo" },
+  { slug: "cinema-city-galeria-polnocna", name: "Cinema City Galeria Północna", label: "Cinema City Galeria Północna" },
+  { slug: "cinema-city-janki", name: "Cinema City Janki", label: "Cinema City Janki" },
+  { slug: "cinema-city-mokotow", name: "Cinema City Mokotów", label: "Cinema City Mokotów" },
+  { slug: "cinema-city-promenada", name: "Cinema City Promenada", label: "Cinema City Promenada" },
+  { slug: "cinema-city-sadyba", name: "Cinema City Sadyba", label: "Cinema City Sadyba" },
 ] as const;
 
 export type Cinema = (typeof cinemas)[number];

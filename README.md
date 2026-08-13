@@ -53,7 +53,7 @@ sequenceDiagram
     participant C as Cloudflare cron
     participant W as Worker
     participant S as Scraper
-    participant P as 19 cinema parsers
+    participant P as 26 cinema parsers
     participant K as Cloudflare KV
 
     C->>W: Run every 4 hours
@@ -223,6 +223,8 @@ This endpoint is public. `force=1` should therefore be used carefully because ev
 
 The five Multikino sources use the JSON microservice that powers Multikino's own website. It is not a documented public developer API, so the integration creates one request-scoped anonymous session, shares it across the five venue requests, and treats each venue as an independent failure boundary. No credentials are stored and no checkout or reservation request is made.
 
+The seven Cinema City sources use the read-only JSON schedule feed that powers Cinema City's own website. Each venue is requested independently; KinoRadar only displays validated Cinema City booking-router links and never opens the booking flow server-side.
+
 Upcoming releases are available through:
 
 ```http
@@ -268,7 +270,7 @@ After deploying changes to routes or metadata:
 6. Submit `https://kinoradar.pl/sitemap-index.xml` and inspect `/pl/`, `/en/`, and representative cinema URLs.
 7. Monitor indexing, queries, click-through rate, and Core Web Vitals after releases.
 
-The sitemap contains the two localized homepages and 19 cinema pages per language. Cinema pages intentionally omit `LocalBusiness` markup until verified addresses and venue details are available.
+The sitemap contains the two localized homepages and 26 cinema pages per language. Cinema pages intentionally omit `LocalBusiness` markup until verified addresses and venue details are available.
 
 Favorites live only in the visitor's browser; no account or backend write is required. Shared URLs contain the canonical film identity, selected screening, and compact language metadata, are limited to 20 items, render read-only, use clean canonical URLs, and are excluded from indexing and the sitemap. Favorites and shared lists use payload version 3; earlier local or shared versions are intentionally not migrated.
 

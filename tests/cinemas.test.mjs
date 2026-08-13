@@ -5,7 +5,7 @@ import { cinemas, getCinema } from "../src/data/cinemas.ts";
 import { getCachedSchedule, SCHEDULE_SCHEMA_VERSION } from "../src/server/kv.ts";
 
 test("registers every cinema in the complete cinema catalog", () => {
-  assert.equal(cinemas.length, 19);
+  assert.equal(cinemas.length, 26);
   assert.deepEqual(getCinema("kinomuzeum"), {
     slug: "kinomuzeum",
     name: "KINOMUZEUM",
@@ -26,6 +26,18 @@ test("registers every cinema in the complete cinema catalog", () => {
       "Multikino G City Targówek",
       "Multikino Wola Park",
       "Multikino Złote Tarasy",
+    ],
+  );
+  assert.deepEqual(
+    cinemas.filter((cinema) => cinema.slug.startsWith("cinema-city-")).map((cinema) => cinema.name),
+    [
+      "Cinema City Arkadia",
+      "Cinema City Bemowo",
+      "Cinema City Galeria Północna",
+      "Cinema City Janki",
+      "Cinema City Mokotów",
+      "Cinema City Promenada",
+      "Cinema City Sadyba",
     ],
   );
 });
