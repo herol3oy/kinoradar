@@ -4,17 +4,23 @@ import test from "node:test";
 import { cinemas, getCinema } from "../src/data/cinemas.ts";
 import { getCachedSchedule, SCHEDULE_SCHEMA_VERSION } from "../src/server/kv.ts";
 
-test("registers KINOMUZEUM in the complete cinema catalog", () => {
-  assert.equal(cinemas.length, 13);
+test("registers KINOMUZEUM and Kino Praha in the complete cinema catalog", () => {
+  assert.equal(cinemas.length, 14);
   assert.deepEqual(getCinema("kinomuzeum"), {
     slug: "kinomuzeum",
     name: "KINOMUZEUM",
     label: "KINOMUZEUM",
   });
   assert.ok(cinemas.map((cinema) => cinema.name).includes("KINOMUZEUM"));
+  assert.deepEqual(getCinema("kinopraha"), {
+    slug: "kinopraha",
+    name: "Praha",
+    label: "Kino Praha",
+  });
+  assert.ok(cinemas.map((cinema) => cinema.name).includes("Praha"));
 });
 
-test("invalidates schedules cached before the KINOMUZEUM integration", async () => {
+test("invalidates schedules cached before the latest cinema integration", async () => {
   const oldCache = {
     get: async () => ({
       schemaVersion: SCHEDULE_SCHEMA_VERSION - 1,

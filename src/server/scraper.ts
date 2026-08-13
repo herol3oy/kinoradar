@@ -11,6 +11,7 @@ import { parseKinocytadela, siteName as cytadelaName } from '../lib/parsers/kino
 import { parseIluzjon, siteName as iluzjonName } from '../lib/parsers/iluzjon';
 import { parseKinogram, siteName as kinogramName } from '../lib/parsers/kinogram';
 import { parseKinomuzeum, siteName as kinomuzeumName } from '../lib/parsers/kinomuzeum';
+import { parseKinopraha, siteName as kinoprahaName } from '../lib/parsers/kinopraha';
 import { normalizeMany, type Show } from '../lib/normalize';
 import { cinemas } from '../data/cinemas';
 import { normalizeWarsawDate } from '../lib/warsaw-date';
@@ -34,6 +35,7 @@ const CINEMA_PARSERS = [
   { ...cinemas[10], parse: parseIluzjon, name: iluzjonName },
   { ...cinemas[11], parse: parseKinogram, name: kinogramName },
   { ...cinemas[12], parse: parseKinomuzeum, name: kinomuzeumName },
+  { ...cinemas[13], parse: parseKinopraha, name: kinoprahaName },
 ];
 
 export async function getShowsReport(date?: string): Promise<ScrapeResult> {

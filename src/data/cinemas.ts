@@ -12,6 +12,7 @@ export const cinemas = [
   { slug: "iluzjon", name: "Iluzjon", label: "Iluzjon" },
   { slug: "kinogram", name: "Kinogram", label: "Kinogram" },
   { slug: "kinomuzeum", name: "KINOMUZEUM", label: "KINOMUZEUM" },
+  { slug: "kinopraha", name: "Praha", label: "Kino Praha" },
 ] as const;
 
 export type Cinema = (typeof cinemas)[number];

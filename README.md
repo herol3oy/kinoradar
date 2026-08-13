@@ -53,7 +53,7 @@ sequenceDiagram
     participant C as Cloudflare cron
     participant W as Worker
     participant S as Scraper
-    participant P as 13 cinema parsers
+    participant P as 14 cinema parsers
     participant K as Cloudflare KV
 
     C->>W: Run every 4 hours
@@ -133,6 +133,8 @@ type Show = {
 Kino Wisła and Kino Atlantic use their separate, allowlisted NoveKino ticketing JSON tenants as their primary schedule sources. This adds event-specific purchase links, ticketing poster images, version and presentation metadata, and tenant-scoped provider screening IDs. If a feed is unavailable or malformed, the adapter falls back to that cinema's public HTML repertoire and extracts the same event IDs where possible. Atlantic also supplements today's JSON with its public HTML so already-started screenings remain visible.
 
 Kino Kultura uses its allowlisted MSI repertoire JSON as its primary schedule source, including event-specific purchase or reservation modes and live seat capacity. Its HTML repertoire supplements today's feed and remains the fallback when JSON is unavailable. The MSI `AllDates` feed is useful for discovery but is not requested at runtime because the repertoire response already contains the complete published event set.
+
+Kino Praha uses the unauthenticated iKSORIS whole-day JSON route exposed by its public ticket storefront. KinoRadar keeps event-specific purchase links from that response and enriches them with posters from the public MTeatr repertoire HTML. Either source can serve independently when the other is unavailable; seat counts are not retained.
 
 Language codes are normalized to lowercase ISO 639-1 values. Missing language fields mean that the source did not provide verified information; KinoRadar does not guess. Generic `napisy` and `dubbing` labels are retained as generic badges. A screening is included by the English-friendly filter only when English audio or English subtitles are explicit.
 
@@ -264,7 +266,7 @@ After deploying changes to routes or metadata:
 6. Submit `https://kinoradar.pl/sitemap-index.xml` and inspect `/pl/`, `/en/`, and representative cinema URLs.
 7. Monitor indexing, queries, click-through rate, and Core Web Vitals after releases.
 
-The sitemap contains the two localized homepages and 13 cinema pages per language. Cinema pages intentionally omit `LocalBusiness` markup until verified addresses and venue details are available.
+The sitemap contains the two localized homepages and 14 cinema pages per language. Cinema pages intentionally omit `LocalBusiness` markup until verified addresses and venue details are available.
 
 Favorites live only in the visitor's browser; no account or backend write is required. Shared URLs contain the canonical film identity, selected screening, and compact language metadata, are limited to 20 items, render read-only, use clean canonical URLs, and are excluded from indexing and the sitemap. Favorites and shared lists use payload version 3; earlier local or shared versions are intentionally not migrated.
 
