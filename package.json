@@ -15,13 +15,13 @@
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^14.2.0",
+    "@astrojs/cloudflare": "^14.2.1",
     "@astrojs/react": "^6.0.2",
     "@astrojs/sitemap": "^3.7.3",
     "@tailwindcss/vite": "4.3.3",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
-    "astro": "^7.2.0",
+    "astro": "^7.2.1",
     "cheerio": "1.2.0",
     "embla-carousel-react": "8.6.0",
     "react": "19.2.8",
@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "babel-plugin-react-compiler": "1.0.0",
-    "wrangler": "^4.120.0"
+    "wrangler": "^4.122.0"
   },
   "overrides": {
     "vite": "^8"
