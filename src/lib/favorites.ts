@@ -70,6 +70,8 @@ export function sanitizeFavorites(value: unknown): FavoriteFilm[] {
     if (!item || typeof item !== "object") continue;
     const raw = item as Partial<FavoriteFilm>;
     if (typeof raw.title !== "string" || !raw.title.trim() || raw.title.length > 200 || !isDate(raw.date) || typeof raw.time !== "string" || !raw.time.trim() || typeof raw.cinema !== "string" || !raw.cinema.trim()) continue;
+    if (raw.cinema.trim().startsWith("Cinema City")
+      || (typeof raw.source === "string" && raw.source.trim().startsWith("cinema-city-"))) continue;
     const language = normalizeScreeningLanguage({
       audioLanguage: raw.audioLanguage,
       subtitleLanguages: raw.subtitleLanguages,

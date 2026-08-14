@@ -136,6 +136,24 @@ test("v3 favorites preserve screening language and reject v2 shared lists", () =
   assert.deepEqual(decodeSharedFavorites(oldPayload), []);
 });
 
+test("removes persisted and shared Cinema City favorites", () => {
+  const cinemaCityFavorite = {
+    title: "Odyseja",
+    date: "2026-08-14",
+    time: "18:00",
+    cinema: "Cinema City Arkadia",
+    source: "cinema-city-arkadia",
+    addedAt: "2026-08-14T12:00:00.000Z",
+  };
+  assert.deepEqual(sanitizeFavorites([cinemaCityFavorite]), []);
+
+  const encoded = Buffer.from(JSON.stringify({
+    v: 3,
+    films: [{ t: "Odyseja", d: "2026-08-14", h: "18:00", c: "Cinema City Arkadia", o: "cinema-city-arkadia" }],
+  })).toString("base64url");
+  assert.deepEqual(decodeSharedFavorites(encoded), []);
+});
+
 test("invalidates pre-language cache payloads", async () => {
   const legacyKv = { get: async () => ({ shows: [], updatedAt: null, failedCinemas: [] }) };
   const currentKv = { get: async () => ({ schemaVersion: SCHEDULE_SCHEMA_VERSION, shows: [], updatedAt: null, failedCinemas: [] }) };

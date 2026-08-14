@@ -13,18 +13,15 @@ import { parseKinogram, siteName as kinogramName } from '../lib/parsers/kinogram
 import { parseKinomuzeum, siteName as kinomuzeumName } from '../lib/parsers/kinomuzeum';
 import { parseKinopraha, siteName as kinoprahaName } from '../lib/parsers/kinopraha';
 import { parseMultikinoCinema } from '../lib/parsers/multikino';
-import { parseCinemaCityCinema } from '../lib/parsers/cinema-city';
 import { parseHeliosBlueCity, siteName as heliosName } from '../lib/parsers/helios';
 import { parseBokCinema } from '../lib/parsers/bok';
 import { parseStacjaFalenica, siteName as falenicaName } from '../lib/parsers/stacja-falenica';
 import { normalizeMany, type Show } from '../lib/normalize';
 import { cinemas, getCinema } from '../data/cinemas';
 import { MULTIKINO_CINEMAS } from '../lib/multikino';
-import { CINEMA_CITY_CINEMAS } from '../lib/cinema-city';
 import { BOK_CINEMAS } from '../lib/bok';
 import { normalizeWarsawDate } from '../lib/warsaw-date';
 import { createMultikinoClient } from './multikino';
-import { createCinemaCityClient } from './cinema-city';
 import { allSettledConcurrent } from './concurrency';
 
 export type ScrapeResult = {
@@ -51,21 +48,12 @@ const CORE_CINEMA_PARSERS = [
 
 function cinemaParsers() {
   const multikinoClient = createMultikinoClient();
-  const cinemaCityClient = createCinemaCityClient();
   const multikinoParsers = MULTIKINO_CINEMAS.map((config) => {
     const cinema = getCinema(config.slug);
     if (!cinema) throw new Error(`Missing cinema registry entry for ${config.slug}`);
     return {
       ...cinema,
       parse: (day: string) => parseMultikinoCinema(config.key, day, { client: multikinoClient }),
-    };
-  });
-  const cinemaCityParsers = CINEMA_CITY_CINEMAS.map((config) => {
-    const cinema = getCinema(config.slug);
-    if (!cinema) throw new Error(`Missing cinema registry entry for ${config.slug}`);
-    return {
-      ...cinema,
-      parse: (day: string) => parseCinemaCityCinema(config.key, day, { client: cinemaCityClient }),
     };
   });
   const bokParsers = BOK_CINEMAS.map((config) => {
@@ -81,12 +69,11 @@ function cinemaParsers() {
   if (!helios) throw new Error('Missing cinema registry entry for helios-blue-city');
   if (!falenica) throw new Error('Missing cinema registry entry for stacja-falenica');
   return [
+    { ...falenica, parse: parseStacjaFalenica, name: falenicaName },
     ...CORE_CINEMA_PARSERS,
     ...multikinoParsers,
-    ...cinemaCityParsers,
     { ...helios, parse: parseHeliosBlueCity, name: heliosName },
     ...bokParsers,
-    { ...falenica, parse: parseStacjaFalenica, name: falenicaName },
   ];
 }
 

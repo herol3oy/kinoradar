@@ -23,13 +23,6 @@ The application currently aggregates:
 - Multikino G City Targówek
 - Multikino Wola Park
 - Multikino Złote Tarasy
-- Cinema City Arkadia
-- Cinema City Bemowo
-- Cinema City Galeria Północna
-- Cinema City Janki
-- Cinema City Mokotów
-- Cinema City Promenada
-- Cinema City Sadyba
 - Helios Blue City
 - Kino Głębocka 66
 - Kino na boku
@@ -64,30 +57,27 @@ The API accepts a `date=YYYY-MM-DD` query parameter. It checks KV first and, on 
 
 Upcoming releases use TMDB's Discover API with the Polish region and limited/theatrical release types. Complete Polish and English catalogs are stored separately in KV, refreshed when older than 24 hours, and retained if a later refresh fails. The page renders eight complete release-date groups at a time so titles sharing a date are never split between batches.
 
-A Cloudflare cron trigger runs every four hours and refreshes today and tomorrow in the background. This normally keeps the most frequently requested schedules warm without delaying a visitor's request.
+Three staggered Cloudflare cron triggers run every four hours. Separate Worker invocations refresh today's schedule, tomorrow's schedule, and the release catalog, keeping each invocation within Cloudflare's subrequest budget.
 
 ```mermaid
 sequenceDiagram
-    participant C as Cloudflare cron
+    participant C as Cloudflare cron triggers
     participant W as Worker
     participant S as Scraper
-    participant P as 30 cinema parsers
+    participant P as 23 cinema parsers
     participant K as Cloudflare KV
 
-    C->>W: Run every 4 hours
-    par Refresh today
-        W->>S: getTodayShows(today)
-        S->>P: Run parsers concurrently
-        P-->>S: Raw schedules
-        S-->>W: Normalized, deduplicated shows
-        W->>K: Store SHOWTIMES:today
-    and Refresh tomorrow
-        W->>S: getTodayShows(tomorrow)
-        S->>P: Run parsers concurrently
-        P-->>S: Raw schedules
-        S-->>W: Normalized, deduplicated shows
-        W->>K: Store SHOWTIMES:tomorrow
-    end
+    C->>W: Minute 0: refresh today
+    W->>S: getShowsReport(today)
+    S->>P: Run parsers with concurrency 3
+    P-->>S: Raw schedules
+    S-->>W: Normalized, deduplicated shows
+    W->>K: Store SHOWTIMES:today
+    C->>W: Minute 10: refresh tomorrow
+    W->>S: getShowsReport(tomorrow)
+    W->>K: Store SHOWTIMES:tomorrow
+    C->>W: Minute 20: refresh releases
+    W->>K: Store the next stale release catalog
 ```
 
 ## Architecture
@@ -105,7 +95,7 @@ KinoRadar uses Astro's server output with the Cloudflare adapter. Astro owns rou
 | Cinema adapters | Fetch and extract schedules from each cinema's website | `src/lib/parsers/` |
 | Data model | Converts cinema-specific output into the common `Show` shape | `src/lib/normalize.ts` |
 | Cache | Reads and writes date-based entries with a 24-hour TTL | `src/server/kv.ts` |
-| Worker and cron | Serves Astro and preloads today and tomorrow on a schedule | `worker.ts` |
+| Worker and cron | Serves Astro and runs separate scheduled refreshes for today, tomorrow, and releases | `worker.ts`, `src/server/scheduled-jobs.ts` |
 | Upcoming releases | Fetches Polish theatrical dates from TMDB, caches localized catalogs, and serves date-grouped pages | `src/server/releases.ts`, `src/pages/api/releases.json.ts`, `src/components/UpcomingReleases.tsx` |
 | Infrastructure | Configures Astro, Cloudflare Workers, static assets, cron, and the KV binding | `astro.config.mjs`, `wrangler.jsonc` |
 
@@ -243,8 +233,6 @@ This endpoint is public. `force=1` should therefore be used carefully because ev
 
 The five Multikino sources use the JSON microservice that powers Multikino's own website. It is not a documented public developer API, so the integration creates one request-scoped anonymous session, shares it across the five venue requests, and treats each venue as an independent failure boundary. No credentials are stored and no checkout or reservation request is made.
 
-The seven Cinema City sources use the read-only JSON schedule feed that powers Cinema City's own website. Each venue is requested independently; KinoRadar only displays validated Cinema City booking-router links and never opens the booking flow server-side.
-
 Upcoming releases are available through:
 
 ```http
@@ -290,7 +278,7 @@ After deploying changes to routes or metadata:
 6. Submit `https://kinoradar.pl/sitemap-index.xml` and inspect `/pl/`, `/en/`, and representative cinema URLs.
 7. Monitor indexing, queries, click-through rate, and Core Web Vitals after releases.
 
-The sitemap contains the two localized homepages and 30 cinema pages per language. Cinema pages intentionally omit `LocalBusiness` markup until verified addresses and venue details are available.
+The sitemap contains the two localized homepages and 23 cinema pages per language. Cinema pages intentionally omit `LocalBusiness` markup until verified addresses and venue details are available.
 
 Favorites live only in the visitor's browser; no account or backend write is required. Shared URLs contain the canonical film identity, selected screening, and compact language metadata, are limited to 20 items, render read-only, use clean canonical URLs, and are excluded from indexing and the sitemap. Favorites and shared lists use payload version 3; earlier local or shared versions are intentionally not migrated.
 

@@ -16,11 +16,6 @@ export type ScreeningProviderRef =
       provider: "multikino";
       cinema: "reduta" | "mlociny" | "targowek" | "wola-park" | "zlote-tarasy";
       screeningId: string;
-    }
-  | {
-      provider: "cinema-city";
-      cinema: "arkadia" | "bemowo" | "galeria-polnocna" | "janki" | "mokotow" | "promenada" | "sadyba";
-      screeningId: string;
     };
 
 export type ScreeningPresentation = {
@@ -128,8 +123,7 @@ export function screeningFingerprint(screening: Screening): string {
 
 export function screeningIdentity(screening: Screening): string {
   if (screening.providerRef?.provider === "novekino"
-    || screening.providerRef?.provider === "multikino"
-    || screening.providerRef?.provider === "cinema-city") {
+    || screening.providerRef?.provider === "multikino") {
     return `${screening.providerRef.provider}:${screening.providerRef.cinema}:${screening.providerRef.screeningId}`;
   }
   return screening.providerRef

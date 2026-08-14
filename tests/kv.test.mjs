@@ -15,7 +15,7 @@ test("uses a 30-minute TTL for partial schedules", async () => {
   let options;
   const kv = { put: async (_key, _value, init) => { options = init; } };
 
-  const data = await setCachedShows(kv, "2026-08-13", [], ["Cinema City Arkadia"]);
+  const data = await setCachedShows(kv, "2026-08-13", [], ["Kinokawiarnia Stacja Falenica"]);
   assert.equal(options.expirationTtl, 1_800);
-  assert.deepEqual(data.failedCinemas, ["Cinema City Arkadia"]);
+  assert.deepEqual(data.failedCinemas, ["Kinokawiarnia Stacja Falenica"]);
 });
