@@ -154,6 +154,8 @@ Kino Kultura uses its allowlisted MSI repertoire JSON as its primary schedule so
 
 Kino Praha uses the unauthenticated iKSORIS whole-day JSON route exposed by its public ticket storefront. KinoRadar keeps event-specific purchase links from that response and enriches them with posters from the public MTeatr repertoire HTML. Either source can serve independently when the other is unavailable; seat counts are not retained.
 
+U-Jazdowski does not expose a complete JSON repertoire API. Its public MSI `AllDates` route contains only calendar availability, so KinoRadar requests the smaller `week.ajax` HTML fragment used by the cinema's own repertoire navigation. The parser makes one request per date and keeps film-page links and posters; it does not open the ticket purchase flow.
+
 Language codes are normalized to lowercase ISO 639-1 values. Missing language fields mean that the source did not provide verified information; KinoRadar does not guess. Generic `napisy` and `dubbing` labels are retained as generic badges. A screening is included by the English-friendly filter only when English audio or English subtitles are explicit.
 
 Cache entries use the key format `SHOWTIMES:YYYY-MM-DD` and carry a schema version. Records from older schemas are treated as misses and refreshed. Display grouping uses `canonicalTitle`, while the source-provided `title`, `times`, and `link` remain available to API consumers.

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseBokCinema, warsawMidnightEpochSeconds } from "../src/lib/parsers/bok.ts";
+import { parseBokCinema } from "../src/lib/parsers/bok.ts";
 
 function page(heading = "13 sierpnia 2026") {
   return `
@@ -30,13 +30,6 @@ function page(heading = "13 sierpnia 2026") {
       </div>
     </div>`;
 }
-
-test("constructs BOK schedule dates at Warsaw midnight across DST boundaries", () => {
-  assert.equal(new Date(warsawMidnightEpochSeconds("2026-01-15") * 1000).toISOString(), "2026-01-14T23:00:00.000Z");
-  assert.equal(new Date(warsawMidnightEpochSeconds("2026-03-29") * 1000).toISOString(), "2026-03-28T23:00:00.000Z");
-  assert.equal(new Date(warsawMidnightEpochSeconds("2026-10-25") * 1000).toISOString(), "2026-10-24T22:00:00.000Z");
-  assert.throws(() => warsawMidnightEpochSeconds("2026-02-31"), /Invalid date key/);
-});
 
 test("parses only the requested BOK cinema calendar", async () => {
   let request;

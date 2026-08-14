@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import { BOK_ORIGIN, getBokCinema, type BokCinema } from "../bok.ts";
-import { normalizeWarsawDate, WARSAW_TIME_ZONE, warsawDate } from "../warsaw-date.ts";
+import { normalizeWarsawDate, WARSAW_TIME_ZONE, warsawDate, warsawMidnightEpochSeconds } from "../warsaw-date.ts";
 import { fetchWithTimeout } from "../../server/fetch.ts";
 
 type BokScreening = { time: string; link: string };
@@ -15,51 +15,12 @@ export type BokShow = {
 
 type ParseOptions = { fetcher?: typeof fetch };
 
-const offsetFormatter = new Intl.DateTimeFormat("en-CA", {
-  timeZone: WARSAW_TIME_ZONE,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hourCycle: "h23",
-});
-
 const polishDateFormatter = new Intl.DateTimeFormat("pl-PL", {
   timeZone: WARSAW_TIME_ZONE,
   day: "numeric",
   month: "long",
   year: "numeric",
 });
-
-function partsByType(formatter: Intl.DateTimeFormat, date: Date): Record<string, string> {
-  return Object.fromEntries(formatter.formatToParts(date).map(({ type, value }) => [type, value]));
-}
-
-function warsawOffsetMs(date: Date): number {
-  const parts = partsByType(offsetFormatter, date);
-  return Date.UTC(
-    Number(parts.year),
-    Number(parts.month) - 1,
-    Number(parts.day),
-    Number(parts.hour),
-    Number(parts.minute),
-    Number(parts.second),
-  ) - Math.trunc(date.getTime() / 1000) * 1000;
-}
-
-export function warsawMidnightEpochSeconds(day: string): number {
-  const normalized = normalizeWarsawDate(day, new Date(0));
-  if (normalized !== day) throw new RangeError(`Invalid date key: ${day}`);
-  const [year, month, date] = day.split("-").map(Number);
-  const localClock = Date.UTC(year, month - 1, date);
-  let instant = localClock;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    instant = localClock - warsawOffsetMs(new Date(instant));
-  }
-  return Math.trunc(instant / 1000);
-}
 
 function normalizedDay(value?: string | Date): string {
   if (typeof value === "string") return normalizeWarsawDate(value);
