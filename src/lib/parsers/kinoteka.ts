@@ -104,32 +104,15 @@ function presentationMetadata(screening: KinotekaScreening) {
     : {};
 }
 
-async function mapConcurrent<T, R>(values: T[], concurrency: number, mapper: (value: T) => Promise<R>): Promise<PromiseSettledResult<R>[]> {
-  const results = new Array<PromiseSettledResult<R>>(values.length);
-  let index = 0;
-
-  const worker = async () => {
-    while (index < values.length) {
-      const current = index++;
-      try {
-        results[current] = { status: "fulfilled", value: await mapper(values[current]) };
-      } catch (reason) {
-        results[current] = { status: "rejected", reason };
-      }
-    }
-  };
-
-  await Promise.all(Array.from({ length: Math.min(concurrency, values.length) }, worker));
-  return results;
-}
-
 export async function parseKinoteka(date?: string | Date) {
   const day = dateKey(date);
-  const url = new URL(kinotekaApiUrl(`/cinema/${KINOTEKA_CINEMA_ID}/screening`));
-  url.searchParams.set("dateTimeFrom", `${day}T00:00:00.000`);
-  url.searchParams.set("dateTimeTo", `${day}T23:59:59.999`);
+  const dateTimeFrom = `${day}T00:00:00.000`;
+  const dateTimeTo = `${day}T23:59:59.999`;
+  const screeningsUrl = new URL(kinotekaApiUrl(`/cinema/${KINOTEKA_CINEMA_ID}/screening`));
+  screeningsUrl.searchParams.set("dateTimeFrom", dateTimeFrom);
+  screeningsUrl.searchParams.set("dateTimeTo", dateTimeTo);
 
-  const rawScreenings = records(await fetchJson<unknown>(url.toString())) as KinotekaScreening[];
+  const rawScreenings = records(await fetchJson<unknown>(screeningsUrl.toString())) as KinotekaScreening[];
   const screenings = rawScreenings.filter((screening) =>
     typeof screening?.id === "string"
     && typeof screening.movieId === "string"
@@ -138,20 +121,28 @@ export async function parseKinoteka(date?: string | Date) {
   if (!screenings.length) return [];
 
   const movieIds = [...new Set(screenings.map((screening) => screening.movieId as string))];
-  const movieResults = await mapConcurrent(movieIds, 4, async (movieId) => ({
-    movieId,
-    movie: await fetchJson<KinotekaMovie>(kinotekaApiUrl(`/movie/${movieId}`)),
-  }));
+  const moviesUrl = new URL(kinotekaApiUrl("/movie"));
+  moviesUrl.searchParams.set("cinemaId", KINOTEKA_CINEMA_ID);
+  moviesUrl.searchParams.set("dateTimeFrom", dateTimeFrom);
+  moviesUrl.searchParams.set("dateTimeTo", dateTimeTo);
+  const rawMovies = records(await fetchJson<unknown>(moviesUrl.toString())) as KinotekaMovie[];
   const movies = new Map<string, KinotekaMovie>();
 
-  for (const result of movieResults) {
-    if (result.status === "fulfilled") {
-      movies.set(result.value.movieId, result.value.movie);
-    } else {
-      console.error("Kinoteka movie request failed:", result.reason);
+  for (const movie of rawMovies) {
+    if (typeof movie?.id === "string" && movieIds.includes(movie.id)) {
+      movies.set(movie.id, movie);
     }
   }
   if (!movies.size) throw new Error("Kinoteka movie details unavailable");
+
+  const missingMovieIds = movieIds.filter((movieId) => !movies.has(movieId));
+  if (missingMovieIds.length) {
+    console.error(JSON.stringify({
+      message: "Kinoteka bulk movie response incomplete",
+      date: day,
+      missingMovieIds,
+    }));
+  }
 
   const shows = movieIds.flatMap((movieId) => {
     const movie = movies.get(movieId);

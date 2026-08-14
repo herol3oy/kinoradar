@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { parseKinoteka } from "../src/lib/parsers/kinoteka.ts";
+import { KINOTEKA_CINEMA_ID } from "../src/lib/kinoteka.ts";
 import { normalizeShow } from "../src/lib/normalize.ts";
 import { favoriteKey } from "../src/lib/favorites.ts";
 import { screeningIdentity } from "../src/lib/screening-language.ts";
@@ -13,7 +14,7 @@ const THIRD_SCREENING_ID = "4fa0c609-4520-40b5-be23-33da8aeb3a3e";
 const MOVIE_ID = "dfaaf102-3d65-4a4f-806f-07a4d88832a5";
 const SECOND_MOVIE_ID = "cfaaf102-3d65-4a4f-806f-07a4d88832a6";
 
-test("maps Kinoteka REST screenings and fetches each movie once", async (t) => {
+test("maps Kinoteka REST screenings with one bulk movie request", async (t) => {
   const originalFetch = globalThis.fetch;
   const requests = [];
   t.after(() => { globalThis.fetch = originalFetch; });
@@ -54,13 +55,13 @@ test("maps Kinoteka REST screenings and fetches each movie once", async (t) => {
         },
       ]);
     }
-    if (url.pathname.endsWith(`/movie/${MOVIE_ID}`) || url.pathname.endsWith(`/movie/${SECOND_MOVIE_ID}`)) {
-      return Response.json({
-        id: url.pathname.endsWith(MOVIE_ID) ? MOVIE_ID : SECOND_MOVIE_ID,
+    if (url.pathname.endsWith("/movie")) {
+      return Response.json([MOVIE_ID, SECOND_MOVIE_ID].map((id) => ({
+        id,
         title: "Spider-Man: Całkiem nowy dzień [napisy PL]",
         shortTitle: "Spider-Man: Całkiem nowy dzień",
         posters: ["https://medstore.kinoteka.pl/poster.jpg"],
-      });
+      })));
     }
     return new Response("not found", { status: 404 });
   };
@@ -85,10 +86,14 @@ test("maps Kinoteka REST screenings and fetches each movie once", async (t) => {
   const scheduleRequest = requests.find((url) => url.pathname.endsWith("/screening"));
   assert.equal(scheduleRequest.searchParams.get("dateTimeFrom"), "2026-08-11T00:00:00.000");
   assert.equal(scheduleRequest.searchParams.get("dateTimeTo"), "2026-08-11T23:59:59.999");
-  assert.equal(requests.filter((url) => url.pathname.includes("/movie/")).length, 2);
+  const movieRequest = requests.find((url) => url.pathname.endsWith("/movie"));
+  assert.equal(movieRequest.searchParams.get("cinemaId"), KINOTEKA_CINEMA_ID);
+  assert.equal(movieRequest.searchParams.get("dateTimeFrom"), "2026-08-11T00:00:00.000");
+  assert.equal(movieRequest.searchParams.get("dateTimeTo"), "2026-08-11T23:59:59.999");
+  assert.equal(requests.length, 2);
 });
 
-test("keeps Kinoteka partial results when one movie request fails", async (t) => {
+test("keeps Kinoteka partial results when the bulk response omits a movie", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });
   t.mock.method(console, "error", () => {});
@@ -101,12 +106,31 @@ test("keeps Kinoteka partial results when one movie request fails", async (t) =>
         { id: SECOND_SCREENING_ID, movieId: SECOND_MOVIE_ID, screeningTimeFrom: "2026-08-11T18:00:00+02:00" },
       ]);
     }
-    if (url.pathname.endsWith(`/movie/${MOVIE_ID}`)) return Response.json({ shortTitle: "Available film", posters: [] });
-    return new Response("upstream failed", { status: 503 });
+    if (url.pathname.endsWith("/movie")) {
+      return Response.json([{ id: MOVIE_ID, shortTitle: "Available film", posters: [] }]);
+    }
+    return new Response("not found", { status: 404 });
   };
 
   const result = await parseKinoteka("2026-08-11");
   assert.deepEqual(result.map((show) => show.title), ["Available film"]);
+});
+
+test("fails Kinoteka when the bulk movie request is unavailable", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/screening")) {
+      return Response.json([
+        { id: SCREENING_ID, movieId: MOVIE_ID, screeningTimeFrom: "2026-08-11T15:30:00+02:00" },
+      ]);
+    }
+    return new Response("upstream failed", { status: 503 });
+  };
+
+  await assert.rejects(parseKinoteka("2026-08-11"), /Kinoteka returned 503/);
 });
 
 test("loads assigned-seat prices using an available standard seat", async () => {

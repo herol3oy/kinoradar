@@ -6,6 +6,7 @@ import {
   readTmdbToken,
   refreshReleaseCatalogIfStale,
 } from './src/server/releases';
+import { scheduledJobFor } from './src/server/scheduled-jobs';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
@@ -26,9 +27,18 @@ export default {
       .transform(response);
   },
 
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    const today = warsawDate();
-    const tomorrow = addCalendarDays(today, 1);
+  scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    const today = warsawDate(new Date(controller.scheduledTime));
+    const job = scheduledJobFor(controller.cron);
+
+    if (!job) {
+      console.error(JSON.stringify({
+        message: 'unknown cron trigger',
+        cron: controller.cron,
+      }));
+      controller.noRetry();
+      return;
+    }
 
     const scrapeAndStore = async (date: string) => {
       try {
@@ -75,10 +85,8 @@ export default {
       }
     };
 
-    ctx.waitUntil((async () => {
-      await scrapeAndStore(today);
-      await scrapeAndStore(tomorrow);
-      await refreshReleases();
-    })());
+    ctx.waitUntil(job.kind === 'schedule'
+      ? scrapeAndStore(addCalendarDays(today, job.dayOffset))
+      : refreshReleases());
   },
 } satisfies ExportedHandler<Env>;
