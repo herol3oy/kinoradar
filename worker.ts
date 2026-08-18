@@ -6,6 +6,7 @@ import {
   readTmdbToken,
   refreshReleaseCatalogIfStale,
 } from './src/server/releases';
+import { refreshPopularFilmsIfStale } from './src/server/filmweb';
 import { scheduledJobFor } from './src/server/scheduled-jobs';
 
 export default {
@@ -85,8 +86,27 @@ export default {
       }
     };
 
+    const refreshPopularFilms = async () => {
+      try {
+        const cache = await refreshPopularFilmsIfStale(env.SHOWTIMES);
+        if (cache) {
+          console.log(JSON.stringify({
+            message: 'popular films cached',
+            films: cache.films.length,
+          }));
+        }
+      } catch (err) {
+        console.error(JSON.stringify({
+          message: 'popular films refresh failed',
+          error: err instanceof Error ? err.message : String(err),
+        }));
+      }
+    };
+
     ctx.waitUntil(job.kind === 'schedule'
       ? scrapeAndStore(addCalendarDays(today, job.dayOffset))
+      : job.kind === 'filmweb'
+      ? refreshPopularFilms()
       : refreshReleases());
   },
 } satisfies ExportedHandler<Env>;

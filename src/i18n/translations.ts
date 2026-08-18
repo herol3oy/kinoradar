@@ -144,6 +144,14 @@ export interface Translations {
     stale: string;
     attribution: string;
   };
+  popular: {
+    eyebrow: string;
+    title: string;
+    accent: string;
+    nextScreening: string;
+    laterToday: string;
+    attribution: string;
+  };
 }
 
 export const translations: Record<Locale, Translations> = {
@@ -305,6 +313,14 @@ export const translations: Record<Locale, Translations> = {
       stale: "_NIEAKTUALNE_DANE — OSTATNIA AKTUALIZACJA",
       attribution: "Ten produkt korzysta z API TMDB, ale nie jest wspierany ani certyfikowany przez TMDB.",
     },
+    popular: {
+      eyebrow: "Najpopularniejsze na Filmwebie",
+      title: "Najpopularniejsze",
+      accent: "seanse.",
+      nextScreening: "Najbliższy seans",
+      laterToday: "Seans dzisiaj",
+      attribution: "Ranking popularności: Filmweb.",
+    },
   },
   en: {
     meta: {
@@ -463,6 +479,14 @@ export const translations: Record<Locale, Translations> = {
       emptyDescription: "Try changing or resetting the filters to see more films.",
       stale: "_STALE_DATA — LAST UPDATED",
       attribution: "This product uses the TMDB API but is not endorsed or certified by TMDB.",
+    },
+    popular: {
+      eyebrow: "Most popular on Filmweb",
+      title: "Most popular",
+      accent: "screenings.",
+      nextScreening: "Next screening",
+      laterToday: "Screening today",
+      attribution: "Popularity ranking by Filmweb.",
     },
   },
 };

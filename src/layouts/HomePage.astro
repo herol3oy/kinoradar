@@ -11,7 +11,10 @@ import { cinemas, type Cinema } from "../data/cinemas";
 import FavoritesNavLink from "../components/FavoritesNavLink";
 import FilmDetails from "../components/FilmDetails";
 import type { Show } from "../lib/normalize";
-import { warsawDate } from "../lib/warsaw-date";
+import { warsawDate, warsawTimeMinutes } from "../lib/warsaw-date";
+import PopularScreenings from "../components/PopularScreenings";
+import { buildPopularScreenings, type PopularScreeningItem } from "../lib/popular-screenings";
+import { getAvailablePopularFilms } from "../server/filmweb";
 import UpcomingReleases from "../components/UpcomingReleases";
 import type { ReleasePageData } from "../lib/releases";
 import { RiCalendarEventLine, RiRadarLine } from "@remixicon/react";
@@ -108,6 +111,7 @@ const serializedJsonLd = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
 const today = warsawDate();
 let schedule = { schemaVersion: SCHEDULE_SCHEMA_VERSION, shows: [], updatedAt: null, failedCinemas: [] } as Awaited<ReturnType<typeof setCachedShows>>;
+let popularItems: PopularScreeningItem[] = [];
 if (!favoritesPage && !film && !releaseCalendar) {
   const cachedSchedule = await getCachedSchedule(env.SHOWTIMES, today);
   if (cachedSchedule) {
@@ -115,6 +119,17 @@ if (!favoritesPage && !film && !releaseCalendar) {
   } else {
     const result = await getShowsReport(today);
     schedule = await setCachedShows(env.SHOWTIMES, today, result.shows, result.failedCinemas);
+  }
+
+  try {
+    const films = await getAvailablePopularFilms(env.SHOWTIMES);
+    popularItems = buildPopularScreenings(films, schedule.shows, warsawTimeMinutes());
+  } catch (error) {
+    console.warn(JSON.stringify({
+      message: "popular screenings unavailable",
+      errorMessage: error instanceof Error ? error.message : String(error),
+    }));
+    popularItems = [];
   }
 }
 ---
@@ -209,7 +224,10 @@ if (!favoritesPage && !film && !releaseCalendar) {
       ) : film ? (
         <FilmDetails locale={locale} slug={film.slug} title={film.title} selectedDate={film.selectedDate} shows={film.shows} failedCinemas={film.failedCinemas} client:load />
       ) : (
-        <App locale={locale} cinema={cinema} favoritesPage={favoritesPage} shows={schedule.shows} updatedAt={schedule.updatedAt} failedCinemas={schedule.failedCinemas} client:load />
+        <>
+          {popularItems.length > 0 && <PopularScreenings locale={locale} items={popularItems} selectedDate={today} />}
+          <App locale={locale} cinema={cinema} favoritesPage={favoritesPage} shows={schedule.shows} updatedAt={schedule.updatedAt} failedCinemas={schedule.failedCinemas} client:load />
+        </>
       )}
     </main>
     <footer class="border-t border-border px-4 py-10">
