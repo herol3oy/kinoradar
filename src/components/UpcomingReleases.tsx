@@ -6,6 +6,7 @@ import {
   type ReleasePageData,
   type UpcomingRelease,
 } from "../lib/releases";
+import Poster from "./Poster";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,23 +42,8 @@ function ReleaseCard({ locale, release }: { locale: Locale; release: UpcomingRel
 
   return (
     <article className="h-full">
-      <Card className="h-full sm:grid sm:grid-cols-[8rem_1fr]">
-      <div className="relative min-h-40 overflow-hidden bg-muted sm:min-h-52">
-        {release.posterUrl ? (
-          <img
-            src={release.posterUrl}
-            alt=""
-            width="500"
-            height="750"
-            loading="lazy"
-            className="size-full object-cover transition-transform duration-300 group-hover/card:scale-105"
-          />
-        ) : (
-          <div className="grid size-full place-items-center bg-muted p-4 text-center text-xs text-muted-foreground">
-            {t.noPoster}
-          </div>
-        )}
-      </div>
+      <Card className="grid h-full grid-cols-[7rem_1fr] items-start sm:grid-cols-[10rem_1fr]">
+      <Poster locale={locale} src={release.posterUrl} className="w-28 shrink-0 self-start sm:w-40" />
       <CardContent className="flex min-w-0 flex-col py-4 sm:py-5">
         <div className="mb-3 flex flex-wrap gap-1.5">
           {release.genres.map((genre) => (

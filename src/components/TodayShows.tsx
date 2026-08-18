@@ -4,6 +4,7 @@ import { screeningIdentity, type Screening } from "../lib/screening-language";
 import { favoriteKey } from "../lib/favorites";
 import { filmSlug } from "../lib/film";
 import type { ViewMode } from "./ShowFilters";
+import Poster from "./Poster";
 import ScreeningBadges from "./ScreeningBadges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,18 +74,10 @@ function ShowCarousel({
       <Carousel opts={{ align: "start" }} className="mx-8 sm:mx-10">
         <CarouselContent className="py-1">
           {shows.map((show, index) => (
-            <CarouselItem key={`${show.cinema}-${show.title}-${index}`} className="basis-72 sm:basis-80">
+            <CarouselItem key={`${show.cinema}-${show.title}-${index}`} className="basis-56 sm:basis-64">
               <article className="h-full">
                 <Card className="h-full">
-                  {show.poster ? (
-                    <div className="aspect-video overflow-hidden bg-muted">
-                      <img src={show.poster} alt={show.title} loading="lazy" className="size-full object-cover transition-transform duration-300 group-hover/card:scale-105" />
-                    </div>
-                  ) : (
-                    <div className="grid aspect-video place-items-center bg-muted p-4 text-center text-xs text-muted-foreground">
-                      {t.releases.noPoster}
-                    </div>
-                  )}
+                  <Poster locale={locale} src={show.poster} alt={show.title} />
                   <CardHeader className="gap-2">
                     <CardTitle className="line-clamp-2 text-base leading-snug">
                       {view === "film" ? show.cinema : show.title}

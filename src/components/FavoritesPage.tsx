@@ -4,6 +4,7 @@ import { decodeSharedFavorites, encodeSharedFavorites, favoriteFilmKey, favorite
 import type { Show } from "../lib/normalize";
 import type { Screening } from "../lib/screening-language";
 import { filmSlug } from "../lib/film";
+import Poster from "./Poster";
 import ScreeningBadges from "./ScreeningBadges";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -113,8 +114,8 @@ export default function FavoritesPage({ locale, favorites, onRemove, onClear }: 
             const ticketLink = film.link ?? match?.screening.link ?? match?.show.link;
             return (
               <article key={key} className="h-full">
-                <Card className="relative h-full overflow-hidden sm:grid sm:grid-cols-[8rem_1fr]">
-                  {poster ? <img src={poster} alt="" loading="lazy" className="h-48 w-full object-cover sm:h-full" /> : <div className="grid min-h-48 place-items-center bg-muted text-muted-foreground"><RiStarLine size={24} aria-hidden="true" /></div>}
+                <Card className="relative grid h-full grid-cols-[7rem_1fr] items-start overflow-hidden sm:grid-cols-[10rem_1fr]">
+                  <Poster locale={locale} src={poster} fallback={<RiStarLine size={24} aria-hidden="true" />} className="w-28 shrink-0 self-start sm:w-40" zoom={false} />
                   <CardContent className="flex min-w-0 flex-col py-5">
                     {!isShared && <Button type="button" variant="ghost" size="icon-sm" onClick={() => onRemove(film)} aria-label={t.favorites.remove} title={t.favorites.remove} className="absolute right-3 top-3 text-primary"><RiStarFill aria-hidden="true" /></Button>}
                     <CardHeader className="p-0">
