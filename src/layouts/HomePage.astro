@@ -14,6 +14,8 @@ import type { Show } from "../lib/normalize";
 import { warsawDate } from "../lib/warsaw-date";
 import UpcomingReleases from "../components/UpcomingReleases";
 import type { ReleasePageData } from "../lib/releases";
+import { RiCalendarEventLine, RiRadarLine } from "@remixicon/react";
+import { ClientRouter } from "astro:transitions";
 
 interface Props {
   locale: Locale;
@@ -124,7 +126,7 @@ if (!favoritesPage && !film && !releaseCalendar) {
     <link rel="icon" type="image/svg+xml" sizes="any" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <meta name="theme-color" content="#07090d" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="description" content={description} />
     {favoritesPage && <meta name="robots" content="noindex,follow" />}
     <link rel="canonical" href={canonicalUrl} />
@@ -145,48 +147,54 @@ if (!favoritesPage && !film && !releaseCalendar) {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImage} />
     <script type="application/ld+json" set:html={serializedJsonLd} />
+    <ClientRouter />
+    <script is:inline>
+      const themeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const syncTheme = () => document.documentElement.classList.toggle("dark", themeQuery.matches);
+      syncTheme();
+      themeQuery.addEventListener("change", syncTheme);
+    </script>
     <title>{title}</title>
   </head>
   <body>
-    <header class="site-header" data-site-header>
-      <div class="site-header__inner mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <a href={`/${locale}/`} class="site-logo group flex items-center" aria-label={t.header.home}>
-          <span class="site-logo__icon relative grid place-items-center border border-retro-magenta/50 bg-retro-magenta/10">
-            <span class="site-logo__pulse rounded-full bg-retro-magenta shadow-[0_0_18px_var(--color-retro-magenta)]"></span>
-            <span class="absolute inset-1 border border-retro-magenta/15 transition-colors duration-300 group-hover:border-retro-magenta/40"></span>
+    <header class="sticky top-0 z-50 border-b border-border/80 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <div class="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <a href={`/${locale}/`} class="group flex min-w-0 items-center gap-3" aria-label={t.header.home}>
+          <span class="grid size-9 shrink-0 place-items-center border border-primary/40 bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+            <RiRadarLine size={20} aria-hidden="true" />
           </span>
-          <span class="site-logo__copy">
-            <span class="site-logo__wordmark block font-bold text-white uppercase">Kino<span class="text-retro-magenta">Radar</span></span>
-            <span class="site-logo__tagline hidden text-gray-600 uppercase sm:block">{t.header.tagline}</span>
+          <span class="grid min-w-0">
+            <span class="truncate font-heading text-base font-semibold tracking-tight">Kino<span class="text-primary">Radar</span></span>
+            <span class="hidden truncate text-xs text-muted-foreground sm:block">{t.header.tagline}</span>
           </span>
         </a>
-        <div class="site-header__actions flex items-center gap-4 sm:gap-6">
+        <div class="flex items-center gap-1 sm:gap-2">
           <a
             href={releasesPath}
             aria-current={releaseCalendar ? "page" : undefined}
-            class:list={["flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase transition-colors hover:text-retro-cyan", releaseCalendar ? "text-retro-cyan" : "text-gray-400"]}
+            class:list={["inline-flex h-8 items-center gap-2 px-2.5 text-xs font-medium transition-colors hover:bg-muted hover:text-foreground", releaseCalendar ? "bg-muted text-foreground" : "text-muted-foreground"]}
           >
-            <span class="text-base" aria-hidden="true">◫</span>
+            <RiCalendarEventLine size={16} aria-hidden="true" />
             <span class="hidden sm:inline">{t.releases.nav}</span>
           </a>
           <FavoritesNavLink locale={locale} client:load />
-          <span class="hidden items-center gap-2 text-[10px] tracking-[0.22em] text-retro-green uppercase md:flex">
-            <span class="size-1.5 animate-pulse rounded-full bg-retro-green shadow-[0_0_10px_var(--color-retro-green)]"></span>
+          <span class="hidden items-center gap-2 px-2 text-xs text-muted-foreground md:flex">
+            <span class="size-1.5 rounded-full bg-primary"></span>
             {t.header.online}
           </span>
-          <nav aria-label={t.header.language} class="flex border border-white/10 text-[10px] font-bold tracking-widest uppercase">
-            <a href={`${pagePath}${sharedQuery}`} aria-current="page" class="bg-retro-cyan px-2.5 py-2 text-black">{locale}</a>
-            <a href={otherPath} data-locale-switch hreflang={otherLocale} lang={otherLocale} class="px-2.5 py-2 text-gray-500 transition-colors hover:text-retro-cyan">{otherLocale}</a>
+          <nav aria-label={t.header.language} class="flex border border-border">
+            <a href={`${pagePath}${sharedQuery}`} aria-current="page" class="bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground">{locale}</a>
+            <a href={otherPath} data-locale-switch hreflang={otherLocale} lang={otherLocale} class="px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">{otherLocale}</a>
           </nav>
         </div>
       </div>
     </header>
-    <main class="pt-20 pb-16">
+    <main class="pb-16 pt-8 sm:pt-10" transition:animate="fade">
       {(cinema || favoritesPage || film || releaseCalendar) && (
-        <nav aria-label="Breadcrumb" class="mx-auto max-w-7xl px-4 pt-6 text-[10px] tracking-widest text-gray-600 uppercase sm:px-6 lg:px-8">
-          <a href={`/${locale}/`} class="transition-colors hover:text-retro-cyan">{t.cinemaPage.home}</a>
-          <span aria-hidden="true" class="px-2">/</span>
-          <span aria-current="page">{releaseCalendar ? t.releases.nav : film?.title ?? (favoritesPage ? t.favorites.nav : cinema?.label)}</span>
+        <nav aria-label="Breadcrumb" class="mx-auto mb-6 flex max-w-7xl items-center gap-2 px-4 text-xs text-muted-foreground sm:px-6 lg:px-8">
+          <a href={`/${locale}/`} class="transition-colors hover:text-foreground">{t.cinemaPage.home}</a>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page" class="truncate text-foreground">{releaseCalendar ? t.releases.nav : film?.title ?? (favoritesPage ? t.favorites.nav : cinema?.label)}</span>
         </nav>
       )}
       {releaseCalendar ? (
@@ -204,14 +212,14 @@ if (!favoritesPage && !film && !releaseCalendar) {
         <App locale={locale} cinema={cinema} favoritesPage={favoritesPage} shows={schedule.shows} updatedAt={schedule.updatedAt} failedCinemas={schedule.failedCinemas} client:load />
       )}
     </main>
-    <footer class="border-t border-white/8 px-4 py-8">
-      <nav aria-label={t.cinemaPage.cinemas} class="mx-auto mb-6 flex max-w-5xl flex-wrap justify-center gap-x-5 gap-y-3 text-[10px] tracking-widest text-gray-600 uppercase">
+    <footer class="border-t border-border px-4 py-10">
+      <nav aria-label={t.cinemaPage.cinemas} class="mx-auto mb-8 flex max-w-5xl flex-wrap justify-center gap-x-5 gap-y-3 text-xs text-muted-foreground">
         {cinemas.map((item) => (
-          <a href={`/${locale}/kino/${item.slug}/`} class="transition-colors hover:text-retro-cyan">{item.label}</a>
+          <a href={`/${locale}/kino/${item.slug}/`} class="transition-colors hover:text-foreground">{item.label}</a>
         ))}
       </nav>
       {releaseCalendar && (
-        <div class="mx-auto mb-6 flex max-w-xl flex-col items-center gap-3 border-y border-white/8 py-5 text-center">
+        <div class="mx-auto mb-8 flex max-w-xl flex-col items-center gap-3 border-y border-border py-5 text-center">
           <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer" aria-label="The Movie Database">
             <img
               src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg"
@@ -221,26 +229,10 @@ if (!favoritesPage && !film && !releaseCalendar) {
               class="h-10 w-auto"
             />
           </a>
-          <p class="max-w-md text-[9px] leading-4 tracking-wider text-gray-600">{t.releases.attribution}</p>
+          <p class="max-w-md text-xs leading-5 text-muted-foreground">{t.releases.attribution}</p>
         </div>
       )}
-      <p class="text-center text-[10px] tracking-[0.2em] text-gray-700 uppercase">{t.footer}</p>
+      <p class="text-center text-xs text-muted-foreground">{t.footer}</p>
     </footer>
-    <script>
-      const header = document.querySelector<HTMLElement>("[data-site-header]");
-      let frame: number | null = null;
-
-      const updateHeader = () => {
-        header?.toggleAttribute("data-compact", window.scrollY > 96);
-        frame = null;
-      };
-
-      const scheduleHeaderUpdate = () => {
-        if (frame === null) frame = window.requestAnimationFrame(updateHeader);
-      };
-
-      updateHeader();
-      window.addEventListener("scroll", scheduleHeaderUpdate, { passive: true });
-    </script>
   </body>
 </html>

@@ -5,6 +5,12 @@ import type { Show } from "../lib/normalize";
 import type { Screening } from "../lib/screening-language";
 import { filmSlug } from "../lib/film";
 import ScreeningBadges from "./ScreeningBadges";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Spinner } from "@/components/ui/spinner";
+import { RiExternalLinkLine, RiShareLine, RiStarFill, RiStarLine } from "@remixicon/react";
 
 type Props = {
   locale: Locale;
@@ -77,18 +83,18 @@ export default function FavoritesPage({ locale, favorites, onRemove, onClear }: 
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
-      <section className="mb-8 border-b border-white/8 pb-8">
-        <p className="mb-3 text-[10px] tracking-[0.3em] text-retro-magenta uppercase">{isShared ? t.favorites.sharedDescription : t.favorites.eyebrow}</p>
-        <h1 className="text-3xl font-bold tracking-tight text-white sm:text-5xl">{isShared ? t.favorites.sharedTitle : t.favorites.title}</h1>
-        <p className="mt-4 max-w-2xl text-sm leading-6 text-gray-500">{isShared ? t.favorites.sharedDescription : t.favorites.description}</p>
+    <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="mb-8 border-b border-border pb-8">
+        <p className="mb-3 text-xs font-medium text-primary">{isShared ? t.favorites.sharedDescription : t.favorites.eyebrow}</p>
+        <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-5xl">{isShared ? t.favorites.sharedTitle : t.favorites.title}</h1>
+        <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">{isShared ? t.favorites.sharedDescription : t.favorites.description}</p>
       </section>
 
       {!isShared && films.length > 0 && (
-        <div className="mb-8 flex flex-wrap items-center gap-3">
-          <button type="button" onClick={copyLink} className="border border-retro-cyan/50 px-4 py-2 text-xs font-bold tracking-widest text-retro-cyan uppercase transition-colors hover:bg-retro-cyan hover:text-black">{t.favorites.copyLink}</button>
-          <button type="button" onClick={onClear} className="border border-white/10 px-4 py-2 text-xs tracking-widest text-gray-500 uppercase transition-colors hover:border-retro-magenta hover:text-retro-magenta">{t.favorites.clear}</button>
-          {copyStatus !== "idle" && <span role="status" className={`text-xs ${copyStatus === "copied" ? "text-retro-green" : "text-retro-magenta"}`}>{copyStatus === "copied" ? t.favorites.copied : t.favorites.copyFailed}</span>}
+        <div className="mb-8 flex flex-wrap items-center gap-2">
+          <Button type="button" onClick={copyLink}><RiShareLine aria-hidden="true" />{t.favorites.copyLink}</Button>
+          <Button type="button" variant="outline" onClick={onClear}>{t.favorites.clear}</Button>
+          {copyStatus !== "idle" && <span role="status" className="text-sm text-muted-foreground">{copyStatus === "copied" ? t.favorites.copied : t.favorites.copyFailed}</span>}
         </div>
       )}
 
@@ -97,7 +103,7 @@ export default function FavoritesPage({ locale, favorites, onRemove, onClear }: 
       ) : films.length === 0 ? (
         <EmptyState locale={locale} message={t.favorites.emptyDescription} />
       ) : loading ? (
-        <div className="grid min-h-64 place-items-center"><span className="text-xs tracking-[0.25em] text-retro-cyan uppercase">{t.favorites.loading}</span></div>
+        <div className="grid min-h-64 place-items-center"><Spinner className="size-5 text-primary" /></div>
       ) : (
         <div className="grid gap-5 md:grid-cols-2">
           {films.map((film) => {
@@ -106,23 +112,27 @@ export default function FavoritesPage({ locale, favorites, onRemove, onClear }: 
             const poster = film.poster ?? match?.show.poster;
             const ticketLink = film.link ?? match?.screening.link ?? match?.show.link;
             return (
-              <article key={key} className="relative overflow-hidden border border-white/8 bg-retro-card">
-                {!isShared && <button type="button" onClick={() => onRemove(film)} aria-label={t.favorites.remove} title={t.favorites.remove} className="absolute right-3 top-3 z-10 grid size-10 place-items-center border border-retro-yellow bg-retro-bg/90 text-2xl text-retro-yellow backdrop-blur">★</button>}
-                <div className="grid h-full sm:grid-cols-[140px_1fr]">
-                  {poster ? <img src={poster} alt="" loading="lazy" className="h-44 w-full object-cover opacity-75 sm:h-full" /> : <div className="hidden min-h-48 place-items-center bg-black/30 text-3xl text-gray-800 sm:grid">◇</div>}
-                  <div className="p-5">
-                    <h2 className="pr-10 text-xl font-bold text-white">{film.title}</h2>
-                    <p className="mt-2 text-[10px] tracking-widest text-gray-600 uppercase">{t.favorites.date}: {new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(new Date(`${film.date}T12:00:00`))}</p>
-                    <div className="mt-5 border-t border-white/8 pt-3">
-                      <p className="text-xs font-bold tracking-wide text-gray-300">{film.cinema}</p>
-                      <span className="mt-2 inline-block border border-retro-yellow/30 bg-retro-yellow/5 px-3 py-1.5 text-sm font-bold text-retro-yellow">{film.time}</span>
+              <article key={key} className="h-full">
+                <Card className="relative h-full overflow-hidden sm:grid sm:grid-cols-[8rem_1fr]">
+                  {poster ? <img src={poster} alt="" loading="lazy" className="h-48 w-full object-cover sm:h-full" /> : <div className="grid min-h-48 place-items-center bg-muted text-muted-foreground"><RiStarLine size={24} aria-hidden="true" /></div>}
+                  <CardContent className="flex min-w-0 flex-col py-5">
+                    {!isShared && <Button type="button" variant="ghost" size="icon-sm" onClick={() => onRemove(film)} aria-label={t.favorites.remove} title={t.favorites.remove} className="absolute right-3 top-3 text-primary"><RiStarFill aria-hidden="true" /></Button>}
+                    <CardHeader className="p-0">
+                      <CardTitle className="pr-10 text-lg leading-snug">{film.title}</CardTitle>
+                      <p className="text-xs text-muted-foreground">{t.favorites.date}: {new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(new Date(`${film.date}T12:00:00`))}</p>
+                    </CardHeader>
+                    <div className="mt-5 border-t border-border pt-4">
+                      <p className="text-sm font-medium">{film.cinema}</p>
+                      <Badge className="mt-2">{film.time}</Badge>
                       <span className="mt-2 block"><ScreeningBadges locale={locale} screening={film} /></span>
-                      <a href={`/${locale}/film/${filmSlug(film.title)}/?date=${film.date}`} className="mt-4 block text-[10px] font-bold tracking-widest text-retro-cyan uppercase hover:text-white">{t.filmPage.allScreenings} →</a>
-                      {ticketLink && <a href={ticketLink} target="_blank" rel="noopener noreferrer" className="mt-3 block text-[10px] font-bold tracking-widest text-retro-green uppercase hover:text-retro-cyan">{t.shows.buyTickets} ↗</a>}
-                      {!match && !ticketLink && <p className="mt-3 text-xs leading-5 text-gray-600">{t.favorites.unavailable}</p>}
+                      <div className="mt-5 flex flex-wrap gap-3 text-sm">
+                        <a href={`/${locale}/film/${filmSlug(film.title)}/?date=${film.date}`} className="inline-flex items-center gap-1 font-medium text-primary hover:text-foreground">{t.filmPage.allScreenings} <span aria-hidden="true">→</span></a>
+                        {ticketLink && <a href={ticketLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-primary hover:text-foreground">{t.shows.buyTickets} <RiExternalLinkLine size={15} aria-hidden="true" /></a>}
+                      </div>
+                      {!match && !ticketLink && <p className="mt-3 text-sm text-muted-foreground">{t.favorites.unavailable}</p>}
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </article>
             );
           })}
@@ -134,5 +144,14 @@ export default function FavoritesPage({ locale, favorites, onRemove, onClear }: 
 
 function EmptyState({ locale, message }: { locale: Locale; message: string }) {
   const t = translations[locale].favorites;
-  return <div className="border border-dashed border-white/10 px-4 py-20 text-center"><div className="text-4xl text-retro-yellow">☆</div><h2 className="mt-4 text-sm font-bold tracking-widest text-white uppercase">{t.empty}</h2><p className="mx-auto mt-3 max-w-md text-xs leading-5 text-gray-600">{message}</p><a href={`/${locale}/`} className="mt-6 inline-block border border-retro-cyan/40 px-4 py-2 text-xs font-bold tracking-widest text-retro-cyan uppercase hover:bg-retro-cyan hover:text-black">{t.browse}</a></div>;
+  return (
+    <Empty className="min-h-72 border border-dashed border-border bg-card">
+      <EmptyHeader>
+        <EmptyMedia variant="icon"><RiStarLine className="size-4" aria-hidden="true" /></EmptyMedia>
+        <EmptyTitle>{t.empty}</EmptyTitle>
+        <EmptyDescription>{message}</EmptyDescription>
+      </EmptyHeader>
+      <a href={`/${locale}/`} className={buttonVariants()}>{t.browse}</a>
+    </Empty>
+  );
 }

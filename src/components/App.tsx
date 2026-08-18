@@ -14,6 +14,9 @@ import { favoriteFilmKey } from "../lib/favorites";
 import { useFavorites } from "../lib/useFavorites";
 import FavoritesPage from "./FavoritesPage";
 import { warsawDate, warsawTimeMinutes } from "../lib/warsaw-date";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Props {
   locale: Locale;
@@ -193,47 +196,42 @@ export default function App({
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
-      <section className="mb-8 grid gap-6 border-b border-white/8 pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
+    <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="mb-8 grid gap-6 border-b border-border pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
-          <p className="mb-3 text-[10px] tracking-[0.3em] text-retro-magenta uppercase">{lockedCinema ? t.cinemaPage.eyebrow : t.hero.eyebrow}</p>
-          <h1 className="max-w-3xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
-            {lockedCinema ? lockedCinema.label : t.hero.title} <span className="text-retro-cyan [text-shadow:0_0_24px_rgba(0,255,255,0.3)]">{lockedCinema ? t.cinemaPage.schedule : t.hero.accent}</span>
+          <p className="mb-3 text-xs font-medium text-primary">{lockedCinema ? t.cinemaPage.eyebrow : t.hero.eyebrow}</p>
+          <h1 className="max-w-3xl font-heading text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
+            {lockedCinema ? lockedCinema.label : t.hero.title} <span className="text-primary">{lockedCinema ? t.cinemaPage.schedule : t.hero.accent}</span>
           </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-gray-500">
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">
             {lockedCinema ? t.cinemaPage.description : t.hero.description}
           </p>
         </div>
-        <div className="flex gap-6 text-right">
-          <div>
-            <span className="block text-2xl font-bold text-white">{filmCount}</span>
-            <span className="text-[9px] tracking-[0.2em] text-gray-600 uppercase">{countLabel(locale, filmCount, t.hero.films)}</span>
-          </div>
-          <div>
-            <span className="block text-2xl font-bold text-white">{cinemaCount}</span>
-            <span className="text-[9px] tracking-[0.2em] text-gray-600 uppercase">{countLabel(locale, cinemaCount, t.hero.cinemas)}</span>
-          </div>
+        <div className="flex flex-wrap gap-2 lg:justify-end">
+          <Badge variant="secondary" className="h-8 px-3">{filmCount} {countLabel(locale, filmCount, t.hero.films)}</Badge>
+          <Badge variant="outline" className="h-8 px-3">{cinemaCount} {countLabel(locale, cinemaCount, t.hero.cinemas)}</Badge>
         </div>
       </section>
 
       <div className="mb-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xs font-bold tracking-[0.22em] text-gray-400 uppercase">{t.date.heading}</h2>
-          <span className="text-[10px] tracking-widest text-gray-700 uppercase">{t.date.range}</span>
+          <h2 className="font-heading text-sm font-semibold">{t.date.heading}</h2>
+          <span className="text-xs text-muted-foreground">{t.date.range}</span>
         </div>
         <DateSelector locale={locale} selected={selectedDate} onChange={handleDateChange} />
       </div>
       {loading ? (
-        <div className="grid min-h-72 place-items-center border border-white/8 bg-white/[0.015]">
+        <div className="grid min-h-72 place-items-center border border-border bg-card">
           <div className="text-center">
-            <span className="mx-auto mb-4 block size-8 animate-spin rounded-full border border-retro-cyan/20 border-t-retro-cyan" />
-            <p className="text-xs tracking-[0.25em] text-retro-cyan uppercase">{t.loading}</p>
+            <Spinner className="mx-auto mb-3 size-5 text-primary" />
+            <p className="text-sm text-muted-foreground">{t.loading}</p>
           </div>
         </div>
       ) : (
         <>
           {(loadError || relevantFailures.length > 0 || isStale) && (
-            <aside className="mb-4 border border-retro-yellow/30 bg-retro-yellow/5 px-4 py-3 text-xs leading-5 tracking-wider text-retro-yellow uppercase" role="status">
+            <Alert className="mb-4" role="status">
+              <AlertDescription>
               {loadError ? (
                 <span>{t.status.loadFailed}</span>
               ) : relevantFailures.length > 0 ? (
@@ -246,9 +244,10 @@ export default function App({
                   {t.status.staleResults} {new Date(updatedAt!).toLocaleString(locale)}.
                 </span>
               )}
-            </aside>
+              </AlertDescription>
+            </Alert>
           )}
-          {favoritesNotice && <aside className="mb-4 border border-retro-yellow/30 bg-retro-yellow/5 px-4 py-3 text-xs text-retro-yellow" role="status">{t.favorites.limit}</aside>}
+          {favoritesNotice && <Alert className="mb-4" role="status"><AlertDescription>{t.favorites.limit}</AlertDescription></Alert>}
           <ShowFilters
             locale={locale}
             cinemas={cinemaNames}

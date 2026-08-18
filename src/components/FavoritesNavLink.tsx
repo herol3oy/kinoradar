@@ -1,5 +1,6 @@
 import { translations, type Locale } from "../i18n/translations";
 import { useFavorites } from "../lib/useFavorites";
+import { RiStarFill } from "@remixicon/react";
 
 export default function FavoritesNavLink({ locale }: { locale: Locale }) {
   const { favorites } = useFavorites();
@@ -8,12 +9,12 @@ export default function FavoritesNavLink({ locale }: { locale: Locale }) {
   return (
     <a
       href={`/${locale}/favorites/`}
-      className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-gray-400 uppercase transition-colors hover:text-retro-yellow"
+      className="inline-flex h-8 items-center gap-2 px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       aria-label={`${t.nav}: ${favorites.length}`}
     >
-      <span className="text-base text-retro-yellow" aria-hidden="true">★</span>
+      <RiStarFill className="size-4 text-primary" aria-hidden="true" />
       <span className="hidden sm:inline">{t.nav}</span>
-      <span className="grid min-w-5 place-items-center border border-retro-yellow/30 px-1 py-0.5 text-retro-yellow">{favorites.length}</span>
+      <span className="grid min-w-5 place-items-center border border-primary/30 px-1 text-xs text-primary">{favorites.length}</span>
     </a>
   );
 }

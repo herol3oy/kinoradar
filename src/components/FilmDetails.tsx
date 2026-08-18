@@ -10,6 +10,12 @@ import { screeningIdentity, type Screening, type ScreeningProviderRef } from "..
 import { useFavorites } from "../lib/useFavorites";
 import DateSelector from "./DateSelector";
 import ScreeningBadges from "./ScreeningBadges";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Spinner } from "@/components/ui/spinner";
+import { RiArrowRightUpLine, RiStarFill, RiStarLine } from "@remixicon/react";
 
 type ScheduleResponse = {
   shows: Show[];
@@ -237,49 +243,51 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
-      <section className="mb-8 grid gap-6 border-b border-white/8 pb-8 md:grid-cols-[1fr_auto] md:items-end">
+    <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="mb-8 grid gap-6 border-b border-border pb-8 md:grid-cols-[1fr_auto] md:items-end">
         <div>
-          <p className="mb-3 text-[10px] tracking-[0.3em] text-retro-magenta uppercase">{t.filmPage.eyebrow}</p>
-          <h1 className="max-w-4xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">{title}</h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-gray-500">{t.filmPage.description}</p>
+          <p className="mb-3 text-xs font-medium text-primary">{t.filmPage.eyebrow}</p>
+          <h1 className="max-w-4xl font-heading text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">{title}</h1>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">{t.filmPage.description}</p>
         </div>
-        {poster && <img src={poster} alt="" className="hidden h-28 w-44 border border-white/10 object-cover opacity-70 md:block" />}
+        {poster && <img src={poster} alt="" className="hidden h-32 w-24 border border-border object-cover md:block" />}
       </section>
 
       <div className="mb-8">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xs font-bold tracking-[0.22em] text-gray-400 uppercase">{t.date.heading}</h2>
-          <span className="text-[10px] tracking-widest text-gray-700 uppercase">{t.date.range}</span>
+          <h2 className="font-heading text-sm font-semibold">{t.date.heading}</h2>
+          <span className="text-xs text-muted-foreground">{t.date.range}</span>
         </div>
         <DateSelector locale={locale} selected={selectedDate} onChange={changeDate} />
       </div>
 
-      {favoritesNotice && <aside className="mb-4 border border-retro-yellow/30 bg-retro-yellow/5 px-4 py-3 text-xs text-retro-yellow" role="status">{t.favorites.limit}</aside>}
-      {failedCinemas.length > 0 && <aside className="mb-4 border border-retro-yellow/30 bg-retro-yellow/5 px-4 py-3 text-xs text-retro-yellow" role="status">{t.filmPage.partialResults}</aside>}
+      {favoritesNotice && <Alert className="mb-4" role="status"><AlertDescription>{t.favorites.limit}</AlertDescription></Alert>}
+      {failedCinemas.length > 0 && <Alert className="mb-4" role="status"><AlertDescription>{t.filmPage.partialResults}</AlertDescription></Alert>}
 
       {loading ? (
-        <div className="grid min-h-72 place-items-center border border-white/8"><span className="text-xs tracking-[0.25em] text-retro-cyan uppercase">{t.loading}</span></div>
+        <div className="grid min-h-72 place-items-center border border-border bg-card"><Spinner className="size-5 text-primary" /></div>
       ) : loadError ? (
-        <Empty message={t.filmPage.loadFailed} title={t.filmPage.noScreenings} />
+        <FilmEmpty message={t.filmPage.loadFailed} title={t.filmPage.noScreenings} />
       ) : cinemaGroups.length === 0 ? (
-        <Empty message={t.filmPage.noScreeningsDescription} title={t.filmPage.noScreenings} />
+        <FilmEmpty message={t.filmPage.noScreeningsDescription} title={t.filmPage.noScreenings} />
       ) : (
         <section aria-label={t.filmPage.cinemas} className="grid gap-4 md:grid-cols-2">
           {cinemaGroups.map(([cinema, entries]) => (
-            <article key={cinema} className="border border-white/8 bg-retro-card p-5">
-              <h2 className="text-lg font-bold text-white">{cinema}</h2>
-              <div className="mt-4 flex flex-wrap gap-2">
+            <article key={cinema}>
+              <Card className="h-full">
+              <CardHeader><CardTitle className="text-lg">{cinema}</CardTitle></CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
                 {entries.map(({ screening, show }) => {
                   const selected = favoriteKeys.has(favoriteKey(show.canonicalTitle, selectedDate, screening.time, show.cinema, screening, show.source));
                   const liveKey = screening.providerRef
                     ? providerLiveScreeningKey(screening.providerRef)
                     : undefined;
                   return <div key={screeningIdentity(screening)} className="space-y-1">
-                    <div className={`flex items-center border ${selected ? "border-retro-yellow bg-retro-yellow/10" : "border-white/10"}`}>
-                      <button type="button" aria-pressed={selected} aria-label={`${selected ? t.favorites.remove : t.favorites.add}: ${show.canonicalTitle}, ${cinema}, ${screening.time}`} onClick={() => { const result = toggle(show, selectedDate, screening); setFavoritesNotice(result === "full"); }} className={`px-2.5 py-2 text-lg ${selected ? "text-retro-yellow" : "text-gray-500 hover:text-retro-yellow"}`}><span aria-hidden="true">{selected ? "★" : "☆"}</span></button>
-                      <span className="pr-2.5 text-sm font-bold text-retro-yellow">{screening.time}</span>
-                      {screening.link && <a href={screening.link} target="_blank" rel="noopener noreferrer" aria-label={`${t.shows.buyTickets}: ${show.canonicalTitle}, ${cinema}, ${screening.time}`} className="border-l border-white/10 px-2.5 py-2 text-xs text-retro-green hover:text-retro-cyan">↗</a>}
+                    <div className="flex items-center border border-border bg-muted">
+                      <Button type="button" size="sm" variant={selected ? "default" : "secondary"} aria-pressed={selected} aria-label={`${selected ? t.favorites.remove : t.favorites.add}: ${show.canonicalTitle}, ${cinema}, ${screening.time}`} onClick={() => { const result = toggle(show, selectedDate, screening); setFavoritesNotice(result === "full"); }} className="h-8 gap-1.5 rounded-none px-2">
+                        {selected ? <RiStarFill aria-hidden="true" /> : <RiStarLine aria-hidden="true" />} {screening.time}
+                      </Button>
+                      {screening.link && <a href={screening.link} target="_blank" rel="noopener noreferrer" aria-label={`${t.shows.buyTickets}: ${show.canonicalTitle}, ${cinema}, ${screening.time}`} className="grid size-8 place-items-center border-l border-border text-muted-foreground hover:text-primary"><RiArrowRightUpLine size={16} aria-hidden="true" /></a>}
                     </div>
                     <ScreeningBadges locale={locale} screening={screening} />
                     <ScreeningLiveDetails
@@ -289,7 +297,8 @@ export default function FilmDetails({ locale, slug, title, selectedDate: initial
                     />
                   </div>;
                 })}
-              </div>
+              </CardContent>
+              </Card>
             </article>
           ))}
         </section>
@@ -306,10 +315,10 @@ function ScreeningLiveDetails({ locale, screening, state }: { locale: Locale; sc
   const t = translations[locale].ticketAvailability;
 
   if (!state || state.status === "loading") {
-    return <p className="max-w-44 text-[9px] leading-4 tracking-wide text-gray-600">{t.loading}…</p>;
+    return <p className="max-w-44 text-xs leading-4 text-muted-foreground">{t.loading}…</p>;
   }
   if (state.status === "failed") {
-    return <p className="text-[9px] tracking-wide text-gray-600">{t.priceUnavailable}</p>;
+    return <p className="text-xs text-muted-foreground">{t.priceUnavailable}</p>;
   }
 
   const data = state.data as KinotekaLiveScreening;
@@ -325,20 +334,20 @@ function ScreeningLiveDetails({ locale, screening, state }: { locale: Locale; sc
       : t.priceUnavailable;
 
   if (!data.offers.length) {
-    return <p className={`max-w-48 text-[9px] leading-4 tracking-wide ${data.soldOut ? "text-retro-magenta" : "text-gray-600"}`}>
+    return <p className="max-w-48 text-xs leading-4 text-muted-foreground">
       {[priceSummary, booked].filter(Boolean).join(" · ")}
     </p>;
   }
 
   return (
-    <details className="group max-w-56 text-[9px] leading-4">
-      <summary className="cursor-pointer list-none tracking-wide text-retro-cyan marker:hidden hover:text-white">
+    <details className="group max-w-56 text-xs leading-4">
+      <summary className="cursor-pointer list-none text-primary marker:hidden hover:text-foreground">
         {[priceSummary, booked].filter(Boolean).join(" · ")} <span aria-hidden="true" className="inline-block transition-transform group-open:rotate-90">›</span>
       </summary>
-      <div className="mt-1.5 border-l border-white/10 pl-2" aria-label={t.prices}>
+      <div className="mt-1.5 border-l border-border pl-2" aria-label={t.prices}>
         {data.offers.map((offer) => (
-          <div key={`${offer.id}:${offer.price}`} className="flex justify-between gap-4 text-gray-500">
-            <span>{offer.name}</span><span className="shrink-0 text-gray-300">{price(offer.price)}</span>
+          <div key={`${offer.id}:${offer.price}`} className="flex justify-between gap-4 text-muted-foreground">
+            <span>{offer.name}</span><span className="shrink-0 text-foreground">{price(offer.price)}</span>
           </div>
         ))}
       </div>
@@ -349,10 +358,10 @@ function ScreeningLiveDetails({ locale, screening, state }: { locale: Locale; sc
 function MsiLiveDetails({ locale, state }: { locale: Locale; state?: LiveLookupState }) {
   const t = translations[locale].ticketAvailability;
   if (!state || state.status === "loading") {
-    return <p className="max-w-44 text-[9px] leading-4 tracking-wide text-gray-600">{t.checkingAvailability}…</p>;
+    return <p className="max-w-44 text-xs leading-4 text-muted-foreground">{t.checkingAvailability}…</p>;
   }
   if (state.status === "failed") {
-    return <p className="text-[9px] tracking-wide text-gray-600">{t.availabilityUnavailable}</p>;
+    return <p className="text-xs text-muted-foreground">{t.availabilityUnavailable}</p>;
   }
 
   const data = state.data as MsiLiveScreening;
@@ -363,11 +372,25 @@ function MsiLiveDetails({ locale, state }: { locale: Locale; state?: LiveLookupS
       : data.seatsLeft !== null
         ? `${data.seatsLeft} ${t.seatsAvailable}`
         : t.availabilityUnavailable;
-  return <p className={`max-w-48 text-[9px] leading-4 tracking-wide ${data.soldOut ? "text-retro-magenta" : "text-retro-cyan"}`}>
+  return <p className="max-w-48 text-xs leading-4 text-muted-foreground">
     {summary}
   </p>;
 }
 
-function Empty({ title, message }: { title: string; message: string }) {
-  return <div className="border border-dashed border-white/10 px-4 py-20 text-center"><span className="text-3xl text-retro-yellow">∅</span><h2 className="mt-4 text-sm font-bold tracking-widest text-white uppercase">{title}</h2><p className="mx-auto mt-3 max-w-md text-xs leading-5 text-gray-600">{message}</p></div>;
+function FilmEmpty({ title, message }: { title: string; message: string }) {
+  return (
+    <EmptyState title={title} message={message} />
+  );
+}
+
+function EmptyState({ title, message }: { title: string; message: string }) {
+  return (
+    <Empty className="min-h-72 border border-dashed border-border bg-card">
+      <EmptyHeader>
+        <EmptyMedia variant="icon"><RiStarLine className="size-4" aria-hidden="true" /></EmptyMedia>
+        <EmptyTitle>{title}</EmptyTitle>
+        <EmptyDescription>{message}</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  );
 }

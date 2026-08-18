@@ -6,6 +6,16 @@ import {
   type ReleasePageData,
   type UpcomingRelease,
 } from "../lib/releases";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
+import { RiCalendarEventLine, RiExternalLinkLine } from "@remixicon/react";
 
 interface Props {
   locale: Locale;
@@ -30,8 +40,9 @@ function ReleaseCard({ locale, release }: { locale: Locale; release: UpcomingRel
   const showOriginalTitle = release.originalTitle.localeCompare(release.title, locale, { sensitivity: "base" }) !== 0;
 
   return (
-    <article className="group grid min-h-full grid-cols-[104px_1fr] overflow-hidden border border-white/8 bg-retro-card transition-all duration-300 hover:-translate-y-1 hover:border-retro-yellow/45 hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)] sm:grid-cols-[140px_1fr]">
-      <div className="relative min-h-40 overflow-hidden bg-black sm:min-h-52">
+    <article className="h-full">
+      <Card className="h-full sm:grid sm:grid-cols-[8rem_1fr]">
+      <div className="relative min-h-40 overflow-hidden bg-muted sm:min-h-52">
         {release.posterUrl ? (
           <img
             src={release.posterUrl}
@@ -39,41 +50,43 @@ function ReleaseCard({ locale, release }: { locale: Locale; release: UpcomingRel
             width="500"
             height="750"
             loading="lazy"
-            className="size-full object-cover opacity-80 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
+            className="size-full object-cover transition-transform duration-300 group-hover/card:scale-105"
           />
         ) : (
-          <div className="grid size-full place-items-center bg-[linear-gradient(145deg,rgba(255,0,255,0.08),rgba(0,255,255,0.06))] text-center text-[10px] tracking-[0.24em] text-gray-700 uppercase">
+          <div className="grid size-full place-items-center bg-muted p-4 text-center text-xs text-muted-foreground">
             {t.noPoster}
           </div>
         )}
-        <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-retro-card to-transparent" />
       </div>
-      <div className="flex min-w-0 flex-col p-4 sm:p-5">
+      <CardContent className="flex min-w-0 flex-col py-4 sm:py-5">
         <div className="mb-3 flex flex-wrap gap-1.5">
           {release.genres.map((genre) => (
-            <span key={genre.id} className="border border-retro-cyan/20 bg-retro-cyan/5 px-2 py-1 text-[8px] tracking-widest text-retro-cyan uppercase">
+            <Badge key={genre.id} variant="secondary">
               {genre.name}
-            </span>
+            </Badge>
           ))}
         </div>
-        <h3 className="text-base font-bold leading-snug text-white sm:text-lg">
-          {release.title} <span className="font-normal text-gray-600">({release.year})</span>
+        <h3 className="font-heading text-base font-semibold leading-snug sm:text-lg">
+          {release.title} <span className="font-normal text-muted-foreground">({release.year})</span>
         </h3>
         {showOriginalTitle && (
-          <p className="mt-1 text-[10px] leading-4 tracking-wide text-gray-600">{release.originalTitle}</p>
+          <p className="mt-1 text-xs leading-4 text-muted-foreground">{release.originalTitle}</p>
         )}
         {release.overview && (
-          <p className="mt-4 line-clamp-4 text-xs leading-5 text-gray-500">{release.overview}</p>
+          <p className="mt-4 line-clamp-4 text-sm leading-6 text-muted-foreground">{release.overview}</p>
         )}
+        <CardFooter className="mt-auto -mx-(--card-spacing) border-t border-border pt-4">
         <a
           href={release.detailsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-auto flex items-center justify-between border-t border-white/8 pt-4 text-[10px] font-bold tracking-[0.16em] text-retro-yellow uppercase transition-colors hover:text-white"
+          className="flex w-full items-center justify-between text-sm font-medium text-primary transition-colors hover:text-foreground"
         >
-          {t.details} <span aria-hidden="true">↗</span>
+          {t.details} <RiExternalLinkLine size={16} aria-hidden="true" />
         </a>
-      </div>
+        </CardFooter>
+      </CardContent>
+      </Card>
     </article>
   );
 }
@@ -83,17 +96,17 @@ function ReleaseGroups({ locale, groups }: { locale: Locale; groups: ReleaseGrou
   return (
     <div>
       {groups.map((group) => (
-        <section key={group.date} className="mb-12 border-b border-white/8 pb-12 last:border-b-0">
+        <section key={group.date} className="mb-10 border-b border-border pb-10 last:border-b-0">
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
-              <span className="mb-2 block text-[9px] tracking-[0.24em] text-gray-700 uppercase">{t.releaseDate}</span>
-              <h2 className="text-xl font-bold capitalize tracking-wide text-white sm:text-2xl">
+              <span className="mb-1 block text-xs text-muted-foreground">{t.releaseDate}</span>
+              <h2 className="font-heading text-xl font-semibold capitalize sm:text-2xl">
                 {formattedDate(locale, group.date)}
               </h2>
             </div>
-            <span className="shrink-0 text-[10px] tracking-widest text-gray-600 uppercase">
+            <Badge variant="outline" className="shrink-0">
               {group.releases.length} {countLabel(locale, group.releases.length, translations[locale].hero.films)}
-            </span>
+            </Badge>
           </div>
           <div className="grid gap-3 lg:grid-cols-2">
             {group.releases.map((release) => (
@@ -188,97 +201,99 @@ export default function UpcomingReleases({
   useEffect(() => () => requestController.current?.abort(), []);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
-      <section className="mb-8 grid gap-6 border-b border-white/8 pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
+    <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="mb-8 grid gap-6 border-b border-border pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
-          <p className="mb-3 text-[10px] tracking-[0.3em] text-retro-magenta uppercase">{t.eyebrow}</p>
-          <h1 className="max-w-3xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
-            {t.title} <span className="text-retro-cyan [text-shadow:0_0_24px_rgba(0,255,255,0.3)]">{t.accent}</span>
+          <p className="mb-3 text-xs font-medium text-primary">{t.eyebrow}</p>
+          <h1 className="max-w-3xl font-heading text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
+            {t.title} <span className="text-primary">{t.accent}</span>
           </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-gray-500">{t.description}</p>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">{t.description}</p>
         </div>
-        <div className="text-right">
-          <span className="block text-2xl font-bold text-white">{page.totalReleases}</span>
-          <span className="text-[9px] tracking-[0.2em] text-gray-600 uppercase">
-            {countLabel(locale, page.totalReleases, translations[locale].hero.films)}
-          </span>
+        <div className="flex items-center lg:justify-end">
+          <Badge variant="secondary" className="h-8 px-3">
+            {page.totalReleases} {countLabel(locale, page.totalReleases, translations[locale].hero.films)}
+          </Badge>
         </div>
       </section>
 
-      <section aria-label={t.filters} className="mb-8 border border-white/8 bg-white/[0.02] p-4 sm:p-5">
-        <div className="grid gap-4 md:grid-cols-[1fr_280px_auto] md:items-end">
-          <label className="block">
-            <span className="mb-2 block text-[9px] tracking-[0.2em] text-gray-600 uppercase">{t.search}</span>
-            <input
+      <section aria-label={t.filters} className="mb-8 border border-border bg-card p-4 shadow-sm sm:p-5">
+        <div className="grid gap-4 md:grid-cols-[1fr_16rem_auto] md:items-end">
+          <div>
+            <Label htmlFor="release-search" className="text-muted-foreground">{t.search}</Label>
+            <Input
+              id="release-search"
               type="search"
               value={query}
               maxLength={RELEASE_QUERY_MAX_LENGTH}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t.searchPlaceholder}
-              className="w-full border border-white/10 bg-black/30 px-3 py-3 text-xs text-white placeholder:text-gray-700 focus:border-retro-cyan"
+              className="mt-2"
             />
-          </label>
-          <label className="block">
-            <span className="mb-2 block text-[9px] tracking-[0.2em] text-gray-600 uppercase">{t.genre}</span>
-            <select
-              value={genreId ?? ""}
-              onChange={(event) => setGenreId(event.target.value ? Number(event.target.value) : null)}
-              className="w-full border border-white/10 bg-retro-card px-3 py-3 text-xs text-gray-300 focus:border-retro-cyan"
-            >
-              <option value="">{t.allGenres}</option>
-              {page.genres.map((genre) => <option key={genre.id} value={genre.id}>{genre.name}</option>)}
-            </select>
-          </label>
-          <button
+          </div>
+          <div>
+            <Label htmlFor="release-genre" className="text-muted-foreground">{t.genre}</Label>
+            <Select value={genreId === null ? null : String(genreId)} onValueChange={(value) => setGenreId(value ? Number(value) : null)}>
+              <SelectTrigger id="release-genre" className="mt-2 w-full"><SelectValue placeholder={t.allGenres} /></SelectTrigger>
+              <SelectContent>
+                {page.genres.map((genre) => <SelectItem key={genre.id} value={String(genre.id)}>{genre.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => { setQuery(""); setGenreId(null); }}
-            className="px-3 py-3 text-[10px] font-bold tracking-widest text-gray-600 uppercase transition-colors hover:text-retro-cyan"
           >
             {t.reset}
-          </button>
+          </Button>
         </div>
       </section>
 
       {page.stale && page.updatedAt && !error && (
-        <aside className="mb-6 border border-retro-yellow/30 bg-retro-yellow/5 px-4 py-3 text-xs leading-5 tracking-wider text-retro-yellow uppercase" role="status">
+        <Alert className="mb-6" role="status">
+          <AlertDescription>
           {t.stale} {new Date(page.updatedAt).toLocaleString(locale)}.
-        </aside>
+          </AlertDescription>
+        </Alert>
       )}
 
       {loading ? (
-        <div className="grid min-h-72 place-items-center border border-white/8 bg-white/[0.015]">
+        <div className="grid min-h-72 place-items-center border border-border bg-card">
           <div className="text-center">
-            <span className="mx-auto mb-4 block size-8 animate-spin rounded-full border border-retro-cyan/20 border-t-retro-cyan" />
-            <p className="text-xs tracking-[0.25em] text-retro-cyan uppercase">{t.loading}</p>
+            <Spinner className="mx-auto mb-3 size-5 text-primary" />
+            <p className="text-sm text-muted-foreground">{t.loading}</p>
           </div>
         </div>
       ) : error ? (
-        <div className="border border-dashed border-retro-yellow/25 bg-retro-yellow/[0.02] px-4 py-20 text-center" role="alert">
-          <span className="mx-auto mb-5 grid size-12 place-items-center border border-retro-yellow/20 text-xl text-retro-yellow">!</span>
-          <p className="text-xs font-bold tracking-[0.22em] text-retro-yellow uppercase">{t.loadFailed}</p>
-          <button type="button" onClick={() => void requestPage(null, false)} className="mt-5 border border-retro-cyan/30 px-4 py-2 text-[10px] font-bold tracking-widest text-retro-cyan uppercase hover:border-retro-cyan">
-            {t.retry}
-          </button>
-        </div>
+        <Empty className="min-h-72 border border-dashed border-border bg-card">
+          <EmptyHeader>
+            <EmptyMedia variant="icon"><RiCalendarEventLine className="size-4" aria-hidden="true" /></EmptyMedia>
+            <EmptyTitle>{t.loadFailed}</EmptyTitle>
+          </EmptyHeader>
+          <Button type="button" onClick={() => void requestPage(null, false)}>{t.retry}</Button>
+        </Empty>
       ) : page.groups.length === 0 ? (
-        <div className="border border-dashed border-white/10 bg-white/[0.015] px-4 py-20 text-center">
-          <span className="mx-auto mb-5 grid size-12 place-items-center border border-retro-yellow/20 text-xl text-retro-yellow">∅</span>
-          <p className="text-xs font-bold tracking-[0.22em] text-retro-yellow uppercase">{t.empty}</p>
-          <p className="mx-auto mt-3 max-w-md text-xs leading-5 tracking-wider text-gray-600">{t.emptyDescription}</p>
-        </div>
+        <Empty className="min-h-72 border border-dashed border-border bg-card">
+          <EmptyHeader>
+            <EmptyMedia variant="icon"><RiCalendarEventLine className="size-4" aria-hidden="true" /></EmptyMedia>
+            <EmptyTitle>{t.empty}</EmptyTitle>
+            <EmptyDescription>{t.emptyDescription}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <>
           <ReleaseGroups locale={locale} groups={page.groups} />
           {page.nextCursor && (
             <div className="mt-2 text-center">
-              <button
-                type="button"
-                disabled={loadingMore}
-                onClick={() => void requestPage(page.nextCursor, true)}
-                className="border border-retro-cyan/30 bg-retro-cyan/5 px-6 py-3 text-[10px] font-bold tracking-[0.2em] text-retro-cyan uppercase transition-colors hover:border-retro-cyan hover:bg-retro-cyan/10 disabled:opacity-50"
-              >
-                {loadingMore ? t.loading : t.loadMore}
-              </button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loadingMore}
+              onClick={() => void requestPage(page.nextCursor, true)}
+            >
+              {loadingMore ? t.loading : t.loadMore}
+            </Button>
             </div>
           )}
         </>

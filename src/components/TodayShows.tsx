@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-import useEmblaCarousel from "embla-carousel-react";
 import { countLabel, translations, type Locale } from "../i18n/translations";
 import type { Show } from "../lib/normalize";
 import { screeningIdentity, type Screening } from "../lib/screening-language";
@@ -7,6 +5,12 @@ import { favoriteKey } from "../lib/favorites";
 import { filmSlug } from "../lib/film";
 import type { ViewMode } from "./ShowFilters";
 import ScreeningBadges from "./ScreeningBadges";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { RiArrowRightUpLine, RiStarFill, RiStarLine } from "@remixicon/react";
 
 interface Props {
   locale: Locale;
@@ -47,138 +51,91 @@ function ShowCarousel({
   onToggleFavorite: (show: Show, screening: Screening) => void;
 }) {
   const t = translations[locale];
-  const [emblaRef, emblaApi] = useEmblaCarousel({ align: "start" });
-  const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
-  const [nextBtnDisabled, setNextBtnDisabled] = useState(true);
-
-  const scrollPrev = () => emblaApi?.scrollPrev();
-  const scrollNext = () => emblaApi?.scrollNext();
-
-  const onSelect = (api: NonNullable<typeof emblaApi>) => {
-    setPrevBtnDisabled(!api.canScrollPrev());
-    setNextBtnDisabled(!api.canScrollNext());
-  };
-
-  useEffect(() => {
-    if (!emblaApi) return;
-
-    onSelect(emblaApi);
-    emblaApi.on("reInit", onSelect);
-    emblaApi.on("select", onSelect);
-
-    return () => {
-      emblaApi.off("reInit", onSelect);
-      emblaApi.off("select", onSelect);
-    };
-  }, [emblaApi, onSelect]);
 
   return (
-    <section className="mb-12 border-b border-white/8 pb-12 last:border-b-0">
-      <div className="mb-5 flex items-end justify-between gap-4">
+    <section className="mb-10 border-b border-border pb-10 last:border-b-0">
+      <div className="mb-4 flex items-end justify-between gap-4">
         <div>
-          <span className="mb-2 block text-[9px] tracking-[0.24em] text-gray-700 uppercase">
+          <p className="mb-1 text-xs text-muted-foreground">
             {view === "film" ? t.shows.filmSignal : t.shows.cinemaChannel}
-          </span>
-          <h2 className="text-xl font-bold tracking-wide text-white sm:text-2xl">
+          </p>
+          <h2 className="font-heading text-xl font-semibold sm:text-2xl">
             {view === "cinema" && source ? (
-              <a className="transition-colors hover:text-retro-cyan" href={`/${locale}/kino/${source}/`}>
+              <a className="transition-colors hover:text-primary" href={`/${locale}/kino/${source}/`}>
                 {heading}
               </a>
             ) : heading}
           </h2>
         </div>
-        <span className="shrink-0 text-[10px] tracking-widest text-gray-600 uppercase">
-          {shows.length} {countLabel(locale, shows.length, view === "film" ? t.hero.cinemas : t.hero.films)}
-        </span>
+        <Badge variant="outline" className="shrink-0">{shows.length} {countLabel(locale, shows.length, view === "film" ? t.hero.cinemas : t.hero.films)}</Badge>
       </div>
 
-      <div className="relative">
-        <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex gap-3">
-            {shows.map((show, i) => {
-              return (
-                <div
-                  key={`${show.cinema}-${show.title}-${i}`}
-                  className="flex-[0_0_auto] min-w-0"
-                  style={{ flexBasis: "250px" }}
-                >
-                  <article
-                    className="group relative flex h-full min-h-56 flex-col overflow-hidden border border-white/8 bg-retro-card transition-all duration-300 hover:-translate-y-1 hover:border-retro-yellow/50 hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
-                  >
-                    {show.poster && (
-                      <div className="relative aspect-[16/10] overflow-hidden bg-black">
-                        <img
-                          src={show.poster}
-                          alt={show.title}
-                          loading="lazy"
-                          className="size-full object-cover opacity-65 transition-all duration-500 group-hover:scale-105 group-hover:opacity-90"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-retro-card via-transparent to-transparent" />
-                      </div>
-                    )}
-                    <div className="flex flex-1 flex-col p-4">
-                      <h3 className="mb-3 text-sm font-bold leading-relaxed tracking-wide text-white">
-                        {view === "film" ? show.cinema : show.title}
-                      </h3>
-                      {view === "film" && (
-                        <span className="mb-3 text-[9px] tracking-widest text-gray-600 uppercase">{t.shows.warsawVenue}</span>
-                      )}
-                      <div className="mb-5 flex flex-wrap gap-1.5">
-                        {show.screenings.map((screening, j) => {
-                          const isFavorite = favoriteKeys.has(favoriteKey(show.canonicalTitle, selectedDate, screening.time, show.cinema, screening, show.source));
-                          return <div key={`${screeningIdentity(screening)}-${j}`} className="space-y-1">
-                            <div className={`flex items-center border ${isFavorite ? "border-retro-yellow bg-retro-yellow/10" : "border-retro-yellow/20 bg-retro-yellow/5"}`}>
-                              <button
+      <Carousel opts={{ align: "start" }} className="mx-8 sm:mx-10">
+        <CarouselContent className="py-1">
+          {shows.map((show, index) => (
+            <CarouselItem key={`${show.cinema}-${show.title}-${index}`} className="basis-72 sm:basis-80">
+              <article className="h-full">
+                <Card className="h-full">
+                  {show.poster ? (
+                    <div className="aspect-video overflow-hidden bg-muted">
+                      <img src={show.poster} alt={show.title} loading="lazy" className="size-full object-cover transition-transform duration-300 group-hover/card:scale-105" />
+                    </div>
+                  ) : (
+                    <div className="grid aspect-video place-items-center bg-muted p-4 text-center text-xs text-muted-foreground">
+                      {t.releases.noPoster}
+                    </div>
+                  )}
+                  <CardHeader className="gap-2">
+                    <CardTitle className="line-clamp-2 text-base leading-snug">
+                      {view === "film" ? show.cinema : show.title}
+                    </CardTitle>
+                    {view === "film" && <p className="text-xs text-muted-foreground">{t.shows.warsawVenue}</p>}
+                  </CardHeader>
+                  <CardContent className="flex flex-1 flex-col">
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      {show.screenings.map((screening, screeningIndex) => {
+                        const isFavorite = favoriteKeys.has(favoriteKey(show.canonicalTitle, selectedDate, screening.time, show.cinema, screening, show.source));
+                        return (
+                          <div key={`${screeningIdentity(screening)}-${screeningIndex}`} className="space-y-1">
+                            <div className="flex items-center border border-border bg-muted">
+                              <Button
                                 type="button"
+                                size="sm"
+                                variant={isFavorite ? "default" : "secondary"}
                                 aria-pressed={isFavorite}
                                 aria-label={`${isFavorite ? t.favorites.remove : t.favorites.add}: ${show.canonicalTitle}, ${screening.time}`}
                                 title={isFavorite ? t.favorites.remove : t.favorites.add}
                                 onClick={() => onToggleFavorite(show, screening)}
-                                className="flex items-center gap-1.5 px-2 py-1 text-xs font-bold text-retro-yellow transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-retro-cyan"
+                                className="h-8 gap-1.5 rounded-none px-2"
                               >
-                                <span aria-hidden="true">{isFavorite ? "★" : "☆"}</span>{screening.time}
-                              </button>
-                              {screening.link && <a href={screening.link} target="_blank" rel="noopener noreferrer" aria-label={`${t.shows.buyTickets}: ${show.canonicalTitle}, ${screening.time}`} className="border-l border-retro-yellow/20 px-2 py-1 text-xs text-retro-green hover:text-retro-cyan">↗</a>}
+                                {isFavorite ? <RiStarFill aria-hidden="true" /> : <RiStarLine aria-hidden="true" />}
+                                {screening.time}
+                              </Button>
+                              {screening.link && (
+                                <a href={screening.link} target="_blank" rel="noopener noreferrer" aria-label={`${t.shows.buyTickets}: ${show.canonicalTitle}, ${screening.time}`} className="grid size-8 place-items-center border-l border-border text-muted-foreground transition-colors hover:text-primary">
+                                  <RiArrowRightUpLine size={16} aria-hidden="true" />
+                                </a>
+                              )}
                             </div>
                             <ScreeningBadges locale={locale} screening={screening} />
-                          </div>;
-                        })}
-                      </div>
-                      <div className="mt-auto space-y-2 border-t border-white/8 pt-3">
-                        <a href={`/${locale}/film/${filmSlug(show.canonicalTitle)}/?date=${selectedDate}`} className="flex items-center justify-between text-[10px] font-bold tracking-[0.16em] text-retro-cyan uppercase transition-colors hover:text-white">
-                          {t.filmPage.allScreenings} <span aria-hidden="true">→</span>
-                        </a>
-                      </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </article>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <button
-          onClick={scrollPrev}
-          disabled={prevBtnDisabled}
-          aria-label={t.shows.previous}
-          className="absolute -left-2 top-1/2 -translate-y-1/2 border border-white/10 bg-retro-bg/95 p-2.5 text-retro-cyan shadow-xl backdrop-blur transition-colors hover:border-retro-cyan disabled:pointer-events-none disabled:opacity-0 sm:-left-4"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-
-        <button
-          onClick={scrollNext}
-          disabled={nextBtnDisabled}
-          aria-label={t.shows.next}
-          className="absolute -right-2 top-1/2 -translate-y-1/2 border border-white/10 bg-retro-bg/95 p-2.5 text-retro-cyan shadow-xl backdrop-blur transition-colors hover:border-retro-cyan disabled:pointer-events-none disabled:opacity-0 sm:-right-4"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
+                    <CardFooter className="mt-auto -mx-(--card-spacing) border-t border-border pt-3">
+                      <a href={`/${locale}/film/${filmSlug(show.canonicalTitle)}/?date=${selectedDate}`} className="flex w-full items-center justify-between text-xs font-medium text-primary transition-colors hover:text-foreground">
+                        {t.filmPage.allScreenings} <span aria-hidden="true">→</span>
+                      </a>
+                    </CardFooter>
+                  </CardContent>
+                </Card>
+              </article>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious aria-label={t.shows.previous} />
+        <CarouselNext aria-label={t.shows.next} />
+      </Carousel>
     </section>
   );
 }
@@ -187,30 +144,22 @@ export default function TodayShows({ locale, shows, view, emptyMessage, selected
   const t = translations[locale].shows;
   if (!shows.length) {
     return (
-      <div className="border border-dashed border-white/10 bg-white/[0.015] px-4 py-20 text-center">
-        <span className="mx-auto mb-5 grid size-12 place-items-center border border-retro-yellow/20 text-xl text-retro-yellow">∅</span>
-        <p className="text-xs font-bold tracking-[0.22em] text-retro-yellow uppercase">{t.noFilms}</p>
-        <p className="mx-auto mt-3 max-w-md text-xs leading-5 tracking-wider text-gray-600">
-          {emptyMessage ?? t.tryFilters}
-        </p>
-      </div>
+      <Empty className="min-h-72 border border-dashed border-border bg-card">
+        <EmptyHeader>
+          <EmptyMedia variant="icon"><RiStarLine className="size-4" aria-hidden="true" /></EmptyMedia>
+          <EmptyTitle>{t.noFilms}</EmptyTitle>
+          <EmptyDescription>{emptyMessage ?? t.tryFilters}</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
   const groups = new Map<string, { heading: string; shows: Show[]; source?: string }>();
-
   shows.forEach((show) => {
     const key = view === "film" ? normalizeTitle(show.canonicalTitle) : show.cinema;
     const existing = groups.get(key);
-    if (existing) {
-      existing.shows.push(show);
-    } else {
-      groups.set(key, {
-        heading: view === "film" ? show.canonicalTitle : show.cinema,
-        shows: [show],
-        source: show.source,
-      });
-    }
+    if (existing) existing.shows.push(show);
+    else groups.set(key, { heading: view === "film" ? show.canonicalTitle : show.cinema, shows: [show], source: show.source });
   });
 
   return (
