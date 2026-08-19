@@ -20,7 +20,7 @@ export default function DateSelector({ locale, selected, onChange }: Props) {
   const t = translations[locale].date;
   return (
     <nav aria-label={t.nav} className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-      <div className="grid min-w-2xl grid-cols-7 gap-2">
+      <div className="flex snap-x gap-2">
         {getDates(t.days).map(({ value, label }, index) => {
           const active = selected === value;
           return (
@@ -28,7 +28,7 @@ export default function DateSelector({ locale, selected, onChange }: Props) {
               key={value}
               type="button"
               variant={active ? "default" : "outline"}
-              className="h-auto min-h-16 flex-col items-start gap-1 px-3 py-3 text-left"
+              className="h-auto min-h-14 min-w-20 flex-1 shrink-0 snap-start flex-col items-start gap-1 px-3 py-2 text-left"
               onClick={() => onChange(value)}
               aria-pressed={active}
             >

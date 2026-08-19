@@ -18,7 +18,7 @@ export default function PopularScreenings({ locale, items, selectedDate }: Props
   if (!items.length) return null;
 
   return (
-    <section className="mx-auto mb-10 max-w-7xl border-b border-border px-4 pb-10 sm:px-6 lg:px-8">
+    <section className="mb-10 border-b border-border pb-10">
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>
           <p className="mb-1 text-xs text-muted-foreground">{t.popular.eyebrow}</p>

@@ -1,19 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { countLabel, translations, type Locale } from "../i18n/translations";
 import { mergeShowsForDisplay, withScreenings, type Show } from "../lib/normalize";
 import { isEnglishFriendly, type Screening } from "../lib/screening-language";
 import DateSelector from "./DateSelector";
 import ShowFilters, {
+  type FilterChip,
   type QuickPreset,
   type SortMode,
   type ViewMode,
 } from "./ShowFilters";
 import TodayShows from "./TodayShows";
+import CinemaJumpNav from "./CinemaJumpNav";
+import { groupShows } from "../lib/group-shows";
 import { cinemas as cinemaCatalog, type Cinema } from "../data/cinemas";
 import { favoriteFilmKey } from "../lib/favorites";
 import { useFavorites } from "../lib/useFavorites";
 import FavoritesPage from "./FavoritesPage";
+import PopularScreenings from "./PopularScreenings";
+import type { PopularScreeningItem } from "../lib/popular-screenings";
 import { warsawDate, warsawTimeMinutes } from "../lib/warsaw-date";
+import { serializeShowFilters, type ShowFilterState } from "../lib/show-filter-params";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
@@ -25,6 +31,8 @@ interface Props {
   failedCinemas: string[];
   cinema?: Cinema;
   favoritesPage?: boolean;
+  initialFilters?: ShowFilterState;
+  popularItems?: PopularScreeningItem[];
 }
 
 type ScheduleResponse = {
@@ -37,6 +45,20 @@ function toMinutes(value: string): number | null {
   const match = value.match(/(?:^|\D)([01]?\d|2[0-3])[:.]([0-5]\d)(?:\D|$)/);
   if (!match) return null;
   return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function defaultFilters(today: string): ShowFilterState {
+  return {
+    date: today,
+    query: "",
+    cinema: "",
+    fromTime: "",
+    toTime: "",
+    startingSoon: false,
+    englishFriendly: false,
+    view: "cinema",
+    sort: "cinema",
+  };
 }
 
 function normalizeSearch(value: string): string {
@@ -53,27 +75,49 @@ export default function App({
   failedCinemas: initialFailedCinemas,
   cinema: lockedCinema,
   favoritesPage = false,
+  initialFilters,
+  popularItems = [],
 }: Props) {
   const t = translations[locale];
   const today = warsawDate();
-  const [selectedDate, setSelectedDate] = useState(today);
+  const seed = initialFilters ?? defaultFilters(today);
+  const [selectedDate, setSelectedDate] = useState(seed.date);
   const [shows, setShows] = useState<Show[]>(initialShows);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<string | null>(initialUpdatedAt);
   const [failedCinemas, setFailedCinemas] = useState(initialFailedCinemas);
-  const [query, setQuery] = useState("");
-  const [cinema, setCinema] = useState("");
-  const [fromTime, setFromTime] = useState("");
-  const [toTime, setToTime] = useState("");
-  const [startingSoon, setStartingSoon] = useState(false);
-  const [englishFriendly, setEnglishFriendly] = useState(false);
-  const [sort, setSort] = useState<SortMode>("cinema");
-  const [view, setView] = useState<ViewMode>("cinema");
+  const [query, setQuery] = useState(seed.query);
+  const [deferredQuery, setDeferredQuery] = useState(seed.query);
+  const [cinema, setCinema] = useState(seed.cinema);
+  const [fromTime, setFromTime] = useState(seed.fromTime);
+  const [toTime, setToTime] = useState(seed.toTime);
+  const [startingSoon, setStartingSoon] = useState(seed.startingSoon);
+  const [englishFriendly, setEnglishFriendly] = useState(seed.englishFriendly);
+  const [sort, setSort] = useState<SortMode>(seed.sort);
+  const [view, setView] = useState<ViewMode>(seed.view);
   const [activePreset, setActivePreset] = useState<QuickPreset | null>(null);
   const [favoritesNotice, setFavoritesNotice] = useState(false);
   const { favorites, toggle, remove, clear } = useFavorites();
   const favoriteKeys = new Set(favorites.map(favoriteFilmKey));
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDeferredQuery(query), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    if (favoritesPage) return;
+    const params = serializeShowFilters(
+      { date: selectedDate, query: deferredQuery, cinema, fromTime, toTime, startingSoon, englishFriendly, view, sort },
+      today,
+    );
+    const suffix = params.size ? `?${params.toString()}` : "";
+    window.history.replaceState(null, "", `${window.location.pathname}${suffix}`);
+
+    const localeSwitch = document.querySelector<HTMLAnchorElement>("[data-locale-switch]");
+    if (localeSwitch) localeSwitch.href = `${localeSwitch.pathname}${suffix}`;
+  }, [favoritesPage, selectedDate, deferredQuery, cinema, fromTime, toTime, startingSoon, englishFriendly, view, sort, today]);
 
   const availableShows = lockedCinema ? shows.filter((show) => show.source === lockedCinema.slug) : shows;
 
@@ -82,7 +126,7 @@ export default function App({
     .sort((a, b) => a.localeCompare(b, locale));
 
   const filteredShows = (() => {
-    const normalizedQuery = normalizeSearch(query.trim());
+    const normalizedQuery = normalizeSearch(deferredQuery.trim());
     const from = fromTime ? toMinutes(fromTime) : null;
     const until = toTime ? toMinutes(toTime) : null;
     const nowMinutes = warsawTimeMinutes();
@@ -90,7 +134,7 @@ export default function App({
     const hasScreeningFilter = from !== null || until !== null || startingSoon || englishFriendly;
 
     const filtered = availableShows.flatMap((show) => {
-      if (normalizedQuery && !normalizeSearch(`${show.canonicalTitle} ${show.title}`).includes(normalizedQuery)) return [];
+      if (normalizedQuery && !normalizeSearch(`${show.canonicalTitle} ${show.title} ${show.cinema}`).includes(normalizedQuery)) return [];
       if (cinema && show.cinema !== cinema) return [];
       if (!hasScreeningFilter) return [show];
 
@@ -119,6 +163,7 @@ export default function App({
   })();
 
   const displayShows = mergeShowsForDisplay(filteredShows);
+  const groups = groupShows(displayShows, view, locale);
   const filmCount = new Set(displayShows.map((show) => normalizeSearch(show.canonicalTitle))).size;
   const cinemaCount = lockedCinema ? 1 : cinemaNames.length;
   const relevantFailures = lockedCinema
@@ -127,6 +172,7 @@ export default function App({
 
   const resetFilters = () => {
     setQuery("");
+    setDeferredQuery("");
     setCinema("");
     setFromTime("");
     setToTime("");
@@ -162,7 +208,7 @@ export default function App({
     setStartingSoon(false);
     setActivePreset(null);
     setLoadError(false);
-    if (date === today) {
+    if (date === seed.date) {
       setShows(initialShows);
       setUpdatedAt(initialUpdatedAt);
       setFailedCinemas(initialFailedCinemas);
@@ -186,7 +232,22 @@ export default function App({
     }
   };
 
-  const hasFilters = Boolean(query || cinema || fromTime || toTime || startingSoon || englishFriendly);
+  const clearTimeRange = (which: "from" | "to") => {
+    if (which === "from") setFromTime("");
+    else setToTime("");
+    setActivePreset(null);
+  };
+
+  const chips: FilterChip[] = [
+    deferredQuery && { key: "query", label: `${t.filters.search}: ${deferredQuery}`, onClear: () => { setQuery(""); setDeferredQuery(""); } },
+    cinema && { key: "cinema", label: `${t.filters.cinema}: ${cinema}`, onClear: () => setCinema("") },
+    fromTime && { key: "from", label: `${t.filters.from} ${fromTime}`, onClear: () => clearTimeRange("from") },
+    toTime && { key: "to", label: `${t.filters.until} ${toTime}`, onClear: () => clearTimeRange("to") },
+    startingSoon && { key: "soon", label: t.filters.startingSoon, onClear: () => { setStartingSoon(false); setActivePreset(null); } },
+    englishFriendly && { key: "english", label: t.filters.englishFriendly, onClear: () => setEnglishFriendly(false) },
+  ].filter(Boolean) as FilterChip[];
+
+  const hasFilters = Boolean(deferredQuery || cinema || fromTime || toTime || startingSoon || englishFriendly);
   const isStale = updatedAt
     ? Date.now() - new Date(updatedAt).getTime() > 6 * 60 * 60 * 1000
     : false;
@@ -197,27 +258,17 @@ export default function App({
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-      <section className="mb-8 grid gap-6 border-b border-border pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
-        <div>
-          <p className="mb-3 text-xs font-medium text-primary">{lockedCinema ? t.cinemaPage.eyebrow : t.hero.eyebrow}</p>
-          <h1 className="max-w-3xl font-heading text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            {lockedCinema ? lockedCinema.label : t.hero.title} <span className="text-primary">{lockedCinema ? t.cinemaPage.schedule : t.hero.accent}</span>
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">
-            {lockedCinema ? t.cinemaPage.description : t.hero.description}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 lg:justify-end">
-          <Badge variant="secondary" className="h-8 px-3">{filmCount} {countLabel(locale, filmCount, t.hero.films)}</Badge>
-          <Badge variant="outline" className="h-8 px-3">{cinemaCount} {countLabel(locale, cinemaCount, t.hero.cinemas)}</Badge>
+      <section className="mb-5 flex flex-wrap items-baseline gap-x-3 gap-y-2">
+        <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">
+          {lockedCinema ? lockedCinema.label : t.hero.title} <span className="text-primary">{lockedCinema ? t.cinemaPage.schedule : t.hero.accent}</span>
+        </h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{filmCount} {countLabel(locale, filmCount, t.hero.films)}</Badge>
+          <Badge variant="outline">{cinemaCount} {countLabel(locale, cinemaCount, t.hero.cinemas)}</Badge>
         </div>
       </section>
 
-      <div className="mb-6">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-heading text-sm font-semibold">{t.date.heading}</h2>
-          <span className="text-xs text-muted-foreground">{t.date.range}</span>
-        </div>
+      <div className="mb-5">
         <DateSelector locale={locale} selected={selectedDate} onChange={handleDateChange} />
       </div>
       {loading ? (
@@ -263,6 +314,8 @@ export default function App({
             startingSoonAvailable={selectedDate === today}
             resultCount={filmCount}
             hideCinema={Boolean(lockedCinema)}
+            chips={chips}
+            jumpNav={<CinemaJumpNav locale={locale} groups={groups} />}
             onQueryChange={setQuery}
             onCinemaChange={setCinema}
             onFromTimeChange={(value) => { setFromTime(value); setActivePreset(null); }}
@@ -274,9 +327,12 @@ export default function App({
             onPresetChange={applyPreset}
             onReset={resetFilters}
           />
+          {!hasFilters && popularItems.length > 0 && (
+            <PopularScreenings locale={locale} items={popularItems} selectedDate={selectedDate} />
+          )}
           <TodayShows
             locale={locale}
-            shows={displayShows}
+            groups={groups}
             view={view}
             emptyMessage={
               loadError
@@ -293,6 +349,7 @@ export default function App({
               const result = toggle(show, selectedDate, screening);
               setFavoritesNotice(result === "full");
             }}
+            onResetFilters={hasFilters ? resetFilters : undefined}
           />
         </>
       )}

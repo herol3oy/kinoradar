@@ -11,8 +11,8 @@ import { cinemas, type Cinema } from "../data/cinemas";
 import FavoritesNavLink from "../components/FavoritesNavLink";
 import FilmDetails from "../components/FilmDetails";
 import type { Show } from "../lib/normalize";
-import { warsawDate, warsawTimeMinutes } from "../lib/warsaw-date";
-import PopularScreenings from "../components/PopularScreenings";
+import { warsawDate, warsawDateRange, warsawTimeMinutes } from "../lib/warsaw-date";
+import { parseShowFilters, type ShowFilterState } from "../lib/show-filter-params";
 import { buildPopularScreenings, type PopularScreeningItem } from "../lib/popular-screenings";
 import { getAvailablePopularFilms } from "../server/filmweb";
 import UpcomingReleases from "../components/UpcomingReleases";
@@ -39,8 +39,9 @@ const otherLocale: Locale = locale === "pl" ? "en" : "pl";
 const releasesPath = locale === "pl" ? "/pl/premiery/" : "/en/releases/";
 const otherReleasesPath = otherLocale === "pl" ? "/pl/premiery/" : "/en/releases/";
 const pagePath = releaseCalendar ? releasesPath : film ? `/${locale}/film/${film.slug}/` : favoritesPage ? `/${locale}/favorites/` : cinema ? `/${locale}/kino/${cinema.slug}/` : `/${locale}/`;
-const sharedQuery = (favoritesPage || film || releaseCalendar) ? Astro.url.search : "";
-const otherPath = releaseCalendar ? `${otherReleasesPath}${sharedQuery}` : film ? `/${otherLocale}/film/${film.slug}/${sharedQuery}` : favoritesPage ? `/${otherLocale}/favorites/${sharedQuery}` : cinema ? `/${otherLocale}/kino/${cinema.slug}/` : `/${otherLocale}/`;
+const isSchedulePage = !favoritesPage && !film && !releaseCalendar && !cinema;
+const sharedQuery = (favoritesPage || film || releaseCalendar || isSchedulePage) ? Astro.url.search : "";
+const otherPath = releaseCalendar ? `${otherReleasesPath}${sharedQuery}` : film ? `/${otherLocale}/film/${film.slug}/${sharedQuery}` : favoritesPage ? `/${otherLocale}/favorites/${sharedQuery}` : cinema ? `/${otherLocale}/kino/${cinema.slug}/` : `/${otherLocale}/${sharedQuery}`;
 const canonicalUrl = new URL(pagePath, Astro.site);
 const polishUrl = new URL(releaseCalendar ? "/pl/premiery/" : film ? `/pl/film/${film.slug}/` : favoritesPage ? "/pl/favorites/" : cinema ? `/pl/kino/${cinema.slug}/` : "/pl/", Astro.site);
 const englishUrl = new URL(releaseCalendar ? "/en/releases/" : film ? `/en/film/${film.slug}/` : favoritesPage ? "/en/favorites/" : cinema ? `/en/kino/${cinema.slug}/` : "/en/", Astro.site);
@@ -110,15 +111,17 @@ const jsonLd = releaseCalendar
 const serializedJsonLd = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
 const today = warsawDate();
+const initialFilters: ShowFilterState = parseShowFilters(Astro.url.searchParams, today, warsawDateRange(7));
+const scheduleDate = initialFilters.date;
 let schedule = { schemaVersion: SCHEDULE_SCHEMA_VERSION, shows: [], updatedAt: null, failedCinemas: [] } as Awaited<ReturnType<typeof setCachedShows>>;
 let popularItems: PopularScreeningItem[] = [];
 if (!favoritesPage && !film && !releaseCalendar) {
-  const cachedSchedule = await getCachedSchedule(env.SHOWTIMES, today);
+  const cachedSchedule = await getCachedSchedule(env.SHOWTIMES, scheduleDate);
   if (cachedSchedule) {
     schedule = cachedSchedule;
   } else {
-    const result = await getShowsReport(today);
-    schedule = await setCachedShows(env.SHOWTIMES, today, result.shows, result.failedCinemas);
+    const result = await getShowsReport(scheduleDate);
+    schedule = await setCachedShows(env.SHOWTIMES, scheduleDate, result.shows, result.failedCinemas);
   }
 
   try {
@@ -224,10 +227,7 @@ if (!favoritesPage && !film && !releaseCalendar) {
       ) : film ? (
         <FilmDetails locale={locale} slug={film.slug} title={film.title} selectedDate={film.selectedDate} shows={film.shows} failedCinemas={film.failedCinemas} client:load />
       ) : (
-        <>
-          {popularItems.length > 0 && <PopularScreenings locale={locale} items={popularItems} selectedDate={today} />}
-          <App locale={locale} cinema={cinema} favoritesPage={favoritesPage} shows={schedule.shows} updatedAt={schedule.updatedAt} failedCinemas={schedule.failedCinemas} client:load />
-        </>
+        <App locale={locale} cinema={cinema} favoritesPage={favoritesPage} shows={schedule.shows} updatedAt={schedule.updatedAt} failedCinemas={schedule.failedCinemas} initialFilters={initialFilters} popularItems={popularItems} client:load />
       )}
     </main>
     <footer class="border-t border-border px-4 py-10">

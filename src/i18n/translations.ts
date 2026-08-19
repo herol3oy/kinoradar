@@ -47,14 +47,20 @@ export interface Translations {
     englishFriendlyHint: string;
     reset: string;
     inSignal: string;
+    moreFilters: string;
+    fewerFilters: string;
+    activeFilters: string;
+    clearFilter: string;
   };
   shows: {
     filmSignal: string;
     cinemaChannel: string;
     warsawVenue: string;
     buyTickets: string;
-    previous: string;
-    next: string;
+    showAll: string;
+    showLess: string;
+    jumpTo: string;
+    resetFilters: string;
     noFilms: string;
     tryFilters: string;
     loadFailed: string;
@@ -216,14 +222,20 @@ export const translations: Record<Locale, Translations> = {
       englishFriendlyHint: "Pokaż seanse ze zweryfikowanym angielskim dźwiękiem lub napisami",
       reset: "[ WYCZYŚĆ ]",
       inSignal: "w sygnale",
+      moreFilters: "Więcej filtrów",
+      fewerFilters: "Mniej filtrów",
+      activeFilters: "Aktywne filtry",
+      clearFilter: "Usuń filtr",
     },
     shows: {
       filmSignal: "Sygnał filmu",
       cinemaChannel: "Kanał kina",
       warsawVenue: "Warszawskie kino",
       buyTickets: "Kup bilety",
-      previous: "Poprzedni slajd",
-      next: "Następny slajd",
+      showAll: "Pokaż wszystkie",
+      showLess: "Pokaż mniej",
+      jumpTo: "Przejdź do kina",
+      resetFilters: "Wyczyść filtry",
       noFilms: "Nie znaleziono filmów",
       tryFilters: "Zmień lub wyczyść filtry.",
       loadFailed: "Nie udało się wczytać repertuaru. Spróbuj ponownie.",
@@ -383,14 +395,20 @@ export const translations: Record<Locale, Translations> = {
       englishFriendlyHint: "Show screenings with verified English audio or subtitles",
       reset: "[ RESET ]",
       inSignal: "in signal",
+      moreFilters: "More filters",
+      fewerFilters: "Fewer filters",
+      activeFilters: "Active filters",
+      clearFilter: "Clear filter",
     },
     shows: {
       filmSignal: "Film signal",
       cinemaChannel: "Cinema channel",
       warsawVenue: "Warsaw venue",
       buyTickets: "Buy tickets",
-      previous: "Previous slide",
-      next: "Next slide",
+      showAll: "Show all",
+      showLess: "Show less",
+      jumpTo: "Jump to cinema",
+      resetFilters: "Clear filters",
       noFilms: "No films found",
       tryFilters: "Try changing or resetting the filters.",
       loadFailed: "The schedule could not be loaded. Please try again.",
